@@ -1,0 +1,307 @@
+name: CI/CD Pipeline - Ghana Crisis Geospatial Analyzer
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # ============================================
+  # STAGE 1: TESTING
+  # ============================================
+  test:
+    name: 🧪 Test & Validate
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+      
+      - name: 🔧 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🔍 TypeScript Lint & Type Check
+        run: |
+          echo "🔍 Running TypeScript type check..."
+          npx tsc --noEmit
+          echo "✅ TypeScript compilation successful"
+      
+      - name: 🧪 Run Geospatial Tests
+        run: |
+          echo "════════════════════════════════════════════════════"
+          echo "TESTING: Geospatial Engine"
+          echo "════════════════════════════════════════════════════"
+          
+          npx ts-node << 'EOF'
+          // Import geospatial functions
+          const { analyzeLocation } = require('./backend/core/geospatial');
+          
+          console.log("🧪 Testing Ghana Grid Coordinate Conversion...");
+          
+          // Test 1: Ghana Grid to Geographic
+          try {
+            const result = analyzeLocation(1199601.618, 333506.562);
+            console.log(`✅ Grid→Geo: Lat=${result.latitude.toFixed(6)}, Lon=${result.longitude.toFixed(6)}`);
+          } catch (e) {
+            console.error(`❌ Grid→Geo conversion failed: ${e.message}`);
+            process.exit(1);
+          }
+          
+          // Test 2: Geographic to Ghana Grid
+          try {
+            const result = analyzeLocation(5.588359, -0.175317);
+            console.log(`✅ Geo→Grid: E=${result.easting.toFixed(2)}, N=${result.northing.toFixed(2)}`);
+          } catch (e) {
+            console.error(`❌ Geo→Grid conversion failed: ${e.message}`);
+            process.exit(1);
+          }
+          
+          // Test 3: Flood Zone Detection
+          try {
+            const result = analyzeLocation(5.55, -0.20);
+            console.log(`✅ Flood Risk: ${result.floodRisk || 'None detected'}`);
+          } catch (e) {
+            console.error(`❌ Flood zone detection failed: ${e.message}`);
+            process.exit(1);
+          }
+          
+          console.log("✅ ALL GEOSPATIAL TESTS PASSED!");
+          EOF
+      
+      - name: 🧪 Test LLM Service
+        run: |
+          echo "════════════════════════════════════════════════════"
+          echo "TESTING: LLM Service"
+          echo "════════════════════════════════════════════════════"
+          
+          npx ts-node << 'EOF'
+          const { generateReasoning } = require('./backend/core/llm_service');
+          
+          try {
+            const mockAnalysis = {
+              latitude: 5.55,
+              longitude: -0.20,
+              floodRisk: "HIGH",
+              populationExposed: 15423
+            };
+            
+            const result = await generateReasoning(mockAnalysis);
+            console.log(`✅ LLM reasoning generated: ${result.substring(0, 50)}...`);
+          } catch (e) {
+            console.error(`❌ LLM service test failed: ${e.message}`);
+            process.exit(1);
+          }
+          
+          console.log("✅ LLM SERVICE TESTS PASSED!");
+          EOF
+      
+      - name: 🧪 Test API Routes
+        run: |
+          echo "════════════════════════════════════════════════════"
+          echo "TESTING: API Routes"
+          echo "════════════════════════════════════════════════════"
+          
+          npx ts-node << 'EOF'
+          const express = require('express');
+          const { router } = require('./backend/api/routes');
+          
+          const app = express();
+          app.use(express.json());
+          app.use('/api', router);
+          
+          console.log("✅ API routes mounted successfully");
+          
+          // Test health endpoint
+          const request = require('supertest');
+          const response = await request(app)
+            .get('/api/health')
+            .expect(200);
+          
+          console.log(`✅ Health endpoint: ${response.body.status}`);
+          EOF
+      
+      - name: 🎯 Test Summary
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ TEST STAGE COMPLETED SUCCESSFULLY"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Tests passed:"
+          echo "  ✓ TypeScript compilation"
+          echo "  ✓ Ghana Grid conversion"
+          echo "  ✓ Flood zone detection"
+          echo "  ✓ LLM service integration"
+          echo "  ✓ API routes"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  # ============================================
+  # STAGE 2: BUILD
+  # ============================================
+  build:
+    name: 📦 Build Application
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+      
+      - name: 🔧 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 📦 Build application
+        run: |
+          echo "🏗️ Building application..."
+          npm run build
+          echo "✅ Build complete"
+      
+      - name: 📊 Verify build artifacts
+        run: |
+          echo "📊 Build artifacts:"
+          ls -la dist/
+          echo ""
+          echo "📁 Server bundle:"
+          ls -la dist/server.cjs || echo "⚠️ server.cjs not found"
+          echo ""
+          echo "📁 Client assets:"
+          ls -la dist/assets/ || echo "⚠️ assets not found"
+      
+      - name: 💾 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dist/
+            package.json
+            .env.example
+          retention-days: 7
+
+  # ============================================
+  # STAGE 3: DEPLOY TO HUGGING FACE SPACES
+  # ============================================
+  deploy-hf:
+    name: 🚀 Deploy to Hugging Face Spaces
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+      
+      - name: 🔧 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 📦 Build application
+        run: |
+          echo "🏗️ Building for deployment..."
+          npm run build
+          echo "✅ Build complete"
+      
+      - name: 🚀 Deploy to Hugging Face Space using Git
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          echo "🚀 Deploying to Hugging Face Spaces..."
+          echo "📦 Target Space: Tetteh-Apotey/Crisis-Geospatial-Analyzer"
+          
+          # Configure git
+          git config --global user.email "ci-cd@github.com"
+          git config --global user.name "CI/CD Bot"
+          
+          # Clone the space with token authentication
+          echo "📥 Cloning Hugging Face Space..."
+          git clone https://Tetteh-Apotey:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Tetteh-Apotey/Crisis-Geospatial-Analyzer space_repo
+          
+          # Clear the space repository but preserve .git
+          cd space_repo
+          echo "🗑️ Clearing old files from Space repository..."
+          find . -maxdepth 1 -not -name '.git' -not -name '.' -not -name '..' -not -name '.gitattributes' -exec rm -rf {} +
+          cd ..
+          
+          # Copy all new files from current repository
+          echo "📋 Copying new files to Space repository..."
+          rsync -av \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            --exclude='.DS_Store' \
+            --exclude='venv' \
+            --exclude='node_modules' \
+            --exclude='.pytest_cache' \
+            --exclude='*.pkl' \
+            --exclude='.env' \
+            --exclude='uploads' \
+            --exclude='tests' \
+            --exclude='coverage' \
+            --exclude='.next' \
+            --exclude='space_repo' \
+            ./ space_repo/
+          
+          # Create .env file with secrets
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> space_repo/.env
+          echo "NODE_ENV=production" >> space_repo/.env
+          echo "PORT=7860" >> space_repo/.env
+          echo "LOG_LEVEL=info" >> space_repo/.env
+          
+          # Commit and push changes
+          cd space_repo
+          echo ""
+          echo "📝 Committing changes..."
+          
+          git add .
+          if git diff --staged --quiet; then
+            echo "ℹ️ No changes detected - skipping commit"
+          else
+            git status --short
+            git commit -m "Deploy Crisis Geospatial Analyzer from GitHub Actions [skip ci]"
+            echo "🚀 Pushing to Hugging Face Space..."
+            git push origin main
+          fi
+          
+          echo ""
+          echo "✅ Deployment completed successfully!"
+          cd ..
+      
+      - name: 🎉 Deployment Summary
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 DEPLOYMENT INITIATED SUCCESSFULLY!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "📱 Application URLs:"
+          echo "   🌐 Live App: https://tetteh-apotey-crisis-geospatial-analyzer.hf.space"
+          echo "   🏗️  Space Page: https://huggingface.co/spaces/Tetteh-Apotey/Crisis-Geospatial-Analyzer"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

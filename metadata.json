@@ -1,0 +1,6 @@
+{
+  "name": "Crisis Geospatial Analyzer",
+  "description": "Geospatial flood-risk analyzer for Ghana with AI-powered RAG reasoning and interactive maps.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
