@@ -9,7 +9,7 @@ dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = 7860;
+  const PORT = process.env.PORT || 7860;
 
   // Setup standard JSON body encoders
   app.use(express.json());
@@ -30,17 +30,31 @@ async function startServer() {
     console.log("Configuring production environment... serving compiled assets.");
     const distPath = path.join(process.cwd(), "dist");
     
-    // Serve production bundle
+    // ✅ Serve static files FIRST (before catch-all)
     app.use(express.static(distPath));
     
-    // Catch-all route feeds client-side SPA routing
+    // ✅ Catch-all route for SPA - but ONLY if the file doesn't exist
+    // This must come AFTER static file serving
     app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+      // Skip if it's an API route (already handled above)
+      if (req.path.startsWith("/api")) {
+        return res.status(404).json({ error: "API endpoint not found" });
+      }
+      
+      // ✅ Check if the request is for a static asset (css, js, etc.)
+      // If it has a file extension, it should have been handled by express.static
+      // If we get here, it's a route that should serve index.html
+      const filePath = path.join(distPath, "index.html");
+      console.log(`📄 Serving SPA route: ${req.path} -> index.html`);
+      res.sendFile(filePath);
     });
   }
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`[Crisis Analyzer] Full-stack engine running on http://localhost:${PORT}`);
+    console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`   API: http://localhost:${PORT}/api`);
+    console.log(`   Health: http://localhost:${PORT}/api/health`);
   });
 }
 
