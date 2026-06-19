@@ -9,7 +9,9 @@ dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT || 7860;
+  
+  // ✅ Parse PORT as number with fallback
+  const PORT = parseInt(process.env.PORT || "7860", 10);
 
   // Setup standard JSON body encoders
   app.use(express.json());
@@ -50,6 +52,7 @@ async function startServer() {
     });
   }
 
+  // ✅ Use PORT variable (now a number)
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`[Crisis Analyzer] Full-stack engine running on http://localhost:${PORT}`);
     console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
