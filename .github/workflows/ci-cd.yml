@@ -44,105 +44,21 @@ jobs:
           echo "════════════════════════════════════════════════════"
           echo "TESTING: Geospatial Engine"
           echo "════════════════════════════════════════════════════"
-          
-          node --loader tsx --eval "
-          import { analyzeLocation } from './backend/core/geospatial.js';
-          
-          console.log('🧪 Testing Ghana Grid Coordinate Conversion...');
-          
-          // Test 1: Ghana Grid to Geographic
-          try {
-            const result = await analyzeLocation(1199601.618, 333506.562);
-            console.log(`✅ Grid→Geo: Lat=\${result.latitude.toFixed(6)}, Lon=\${result.longitude.toFixed(6)}`);
-          } catch (e) {
-            console.error(`❌ Grid→Geo conversion failed: \${e.message}`);
-            process.exit(1);
-          }
-          
-          // Test 2: Geographic to Ghana Grid
-          try {
-            const result = await analyzeLocation(5.588359, -0.175317);
-            console.log(`✅ Geo→Grid: E=\${result.easting.toFixed(2)}, N=\${result.northing.toFixed(2)}`);
-          } catch (e) {
-            console.error(`❌ Geo→Grid conversion failed: \${e.message}`);
-            process.exit(1);
-          }
-          
-          // Test 3: Flood Zone Detection (Accra)
-          try {
-            const result = await analyzeLocation(5.55, -0.20);
-            console.log(`✅ Accra Flood Risk: \${result.floodRisk || 'None detected'}`);
-          } catch (e) {
-            console.error(`❌ Flood zone detection failed: \${e.message}`);
-            process.exit(1);
-          }
-          
-          // Test 4: Flood Zone Detection (Tamale)
-          try {
-            const result = await analyzeLocation(9.3824, -0.8354);
-            console.log(`✅ Tamale Flood Risk: \${result.floodRisk || 'None detected'}`);
-          } catch (e) {
-            console.error(`❌ Tamale flood zone detection failed: \${e.message}`);
-            process.exit(1);
-          }
-          
-          console.log('✅ ALL GEOSPATIAL TESTS PASSED!');
-          "
+          npx tsx tests/geospatial.test.ts
       
       - name: 🧪 Test LLM Service
         run: |
           echo "════════════════════════════════════════════════════"
           echo "TESTING: LLM Service"
           echo "════════════════════════════════════════════════════"
-          
-          node --loader tsx --eval "
-          import { generateReasoning } from './backend/core/llm_service.js';
-          
-          try {
-            const mockAnalysis = {
-              latitude: 5.55,
-              longitude: -0.20,
-              floodRisk: 'HIGH',
-              populationExposed: 15423,
-              buildingsAffected: 892,
-              distanceToRisk: 0.5,
-              floodZone: 'Odaw River Basin'
-            };
-            
-            const result = await generateReasoning(mockAnalysis);
-            console.log(`✅ LLM reasoning generated: \${result.substring(0, 50)}...`);
-          } catch (e) {
-            console.error(`❌ LLM service test failed: \${e.message}`);
-            process.exit(1);
-          }
-          
-          console.log('✅ LLM SERVICE TESTS PASSED!');
-          "
+          npx tsx tests/llm.test.ts
       
       - name: 🧪 Test API Routes
         run: |
           echo "════════════════════════════════════════════════════"
           echo "TESTING: API Routes"
           echo "════════════════════════════════════════════════════"
-          
-          node --loader tsx --eval "
-          import express from 'express';
-          import { router } from './backend/api/routes.js';
-          
-          const app = express();
-          app.use(express.json());
-          app.use('/api', router);
-          
-          console.log('✅ API routes mounted successfully');
-          
-          // Test health endpoint
-          const { default: request } = await import('supertest');
-          const response = await request(app)
-            .get('/api/health')
-            .expect(200);
-          
-          console.log(`✅ Health endpoint: \${response.body.status}`);
-          "
+          npx tsx tests/api.test.ts
       
       - name: 🎯 Test Summary
         run: |
@@ -152,8 +68,7 @@ jobs:
           echo "Tests passed:"
           echo "  ✓ TypeScript compilation"
           echo "  ✓ Ghana Grid conversion"
-          echo "  ✓ Flood zone detection (Accra)"
-          echo "  ✓ Flood zone detection (Tamale)"
+          echo "  ✓ Flood zone detection"
           echo "  ✓ LLM service integration"
           echo "  ✓ API routes"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
