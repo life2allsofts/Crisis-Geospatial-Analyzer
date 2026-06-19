@@ -22,10 +22,16 @@ export default defineConfig(() => {
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
     build: {
-      // ✅ Ensure CSS is properly processed
+      // ✅ This ensures CSS is extracted to a separate file
       cssCodeSplit: false,
+      // ✅ Generate a manifest file to help with asset loading
+      manifest: true,
       rollupOptions: {
         output: {
+          // ✅ Ensure CSS is always generated
+          assetFileNames: 'assets/[name].[hash].[ext]',
+          chunkFileNames: 'assets/[name].[hash].js',
+          entryFileNames: 'assets/[name].[hash].js',
           manualChunks: {
             vendor: ['react', 'react-dom'],
           },
