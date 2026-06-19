@@ -1,10 +1,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
-@import "tailwindcss";
 
-@theme {
+/* TailwindCSS v3 directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS variables (replaces @theme) */
+:root {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  /* Colors */
+  --primary: #0a1628;
+  --secondary: #1a2a4a;
+  --accent: #ff6b35;
+  --accent-hover: #ff8555;
+  --text: #e0e8f0;
+  --text-muted: #8899aa;
+  --success: #00c853;
+  --warning: #ffab00;
+  --danger: #ff1744;
+  --critical: #d50000;
+}
+
+/* Apply font family */
+body {
+  font-family: var(--font-sans);
 }
 
 /* Custom leaflet scrollbar and maps adjustments */
@@ -29,4 +51,149 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.5);
+}
+
+/* Additional styles that might be needed */
+.tactical-header {
+  background: var(--secondary);
+  border-bottom: 2px solid var(--accent);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tactical-header h1 {
+  font-size: 1.5rem;
+  font-weight: 300;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.tactical-header .badge {
+  background: var(--accent);
+  color: var(--primary);
+  padding: 0.25rem 1rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+/* Risk indicators */
+.risk-low { color: var(--success); }
+.risk-medium { color: var(--warning); }
+.risk-high { color: var(--danger); }
+.risk-critical { color: var(--critical); animation: pulse 1.5s ease-in-out infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Control panel */
+.control-panel {
+  background: var(--secondary);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 1rem;
+}
+
+.control-panel label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.control-panel input {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--primary);
+  border: 1px solid #2a3a5a;
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.control-panel input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--primary);
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+  font-size: 1rem;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Results display */
+.results-container {
+  background: var(--secondary);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 1rem;
+}
+
+.results-container .metric {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.results-container .metric:last-child {
+  border-bottom: none;
+}
+
+.metric-label {
+  color: var(--text-muted);
+}
+
+.metric-value {
+  font-weight: bold;
+}
+
+/* Map container */
+.map-container {
+  height: 500px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 1rem;
+  border: 1px solid #2a3a5a;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tactical-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+    padding: 1rem;
+  }
+  
+  .control-panel,
+  .results-container {
+    margin: 0.5rem;
+    padding: 1rem;
+  }
+  
+  .map-container {
+    height: 300px;
+  }
 }
