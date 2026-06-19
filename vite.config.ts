@@ -24,11 +24,10 @@ export default defineConfig(() => {
     build: {
       // ✅ This ensures CSS is extracted to a separate file
       cssCodeSplit: false,
-      // ✅ Generate a manifest file to help with asset loading
+      // ✅ Generate manifest for asset loading
       manifest: true,
       rollupOptions: {
         output: {
-          // ✅ Ensure CSS is always generated
           assetFileNames: 'assets/[name].[hash].[ext]',
           chunkFileNames: 'assets/[name].[hash].js',
           entryFileNames: 'assets/[name].[hash].js',
