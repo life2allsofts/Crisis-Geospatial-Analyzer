@@ -2,7 +2,7 @@
 title: Ghana Crisis Geospatial Analyzer
 emoji: 🌍
 colorFrom: red
-colorTo: orange
+colorTo: pink
 sdk: docker
 sdk_version: "1.0"
 pinned: false
