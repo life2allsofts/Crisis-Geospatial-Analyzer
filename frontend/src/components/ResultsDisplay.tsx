@@ -124,10 +124,17 @@ export default function ResultsDisplay({
             {/* Vector metrics list */}
             <div className={`md:col-span-7 ${tc.cardBg} border border-slate-800/85 rounded-xl p-5 shadow-lg flex flex-col justify-between`}>
               <div>
-                <h3 className="text-xs font-bold font-display uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
-                  <Building className={`w-4 h-4 ${tc.textAccent}`} />
-                  Hydrological Elements Exposed
-                </h3>
+                <div className="flex justify-between items-center mb-4 gap-2 flex-wrap">
+                  <h3 className="text-xs font-bold font-display uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                    <Building className={`w-4 h-4 ${tc.textAccent}`} />
+                    Hydrological Elements Exposed
+                  </h3>
+                  {stats && stats.selectedScenario && stats.selectedScenario.id !== "baseline" && (
+                    <span className="text-[9px] bg-orange-950/60 border border-orange-900/40 text-orange-400 font-bold px-2 py-0.5 rounded font-mono animate-pulse">
+                      SIMULATING: {stats.selectedScenario.name.toUpperCase()}
+                    </span>
+                  )}
+                </div>
                 
                 <div className="space-y-4">
                   {/* People count */}
@@ -137,7 +144,9 @@ export default function ResultsDisplay({
                         🧑‍🤝‍🧑
                       </div>
                       <div>
-                        <div className="text-[11.5px] text-slate-200 font-semibold leading-none">Exposed Residents</div>
+                        <div className="text-[11.5px] text-slate-200 font-semibold leading-none">
+                          {stats && stats.selectedScenario && stats.selectedScenario.id !== "baseline" ? "Simulated Exposed Residents" : "Exposed Residents"}
+                        </div>
                         <div className="text-[9px] text-slate-400 mt-1 font-mono">WorldPop Grid Estimator</div>
                       </div>
                     </div>
@@ -158,7 +167,9 @@ export default function ResultsDisplay({
                         🏠
                       </div>
                       <div>
-                        <div className="text-[11.5px] text-slate-200 font-semibold leading-none">Structural Assets</div>
+                        <div className="text-[11.5px] text-slate-200 font-semibold leading-none">
+                          {stats && stats.selectedScenario && stats.selectedScenario.id !== "baseline" ? "Simulated Structural Assets" : "Structural Assets"}
+                        </div>
                         <div className="text-[9px] text-slate-400 mt-1 font-mono">OSM Footprints Match</div>
                       </div>
                     </div>
@@ -177,7 +188,9 @@ export default function ResultsDisplay({
                         🛣️
                       </div>
                       <div>
-                        <div className="text-[11.5px] text-slate-200 font-semibold leading-none">Exposed Roads Network</div>
+                        <div className="text-[11.5px] text-slate-200 font-semibold leading-none">
+                          {stats && stats.selectedScenario && stats.selectedScenario.id !== "baseline" ? "Simulated Exposed Roads" : "Exposed Roads Network"}
+                        </div>
                         <div className="text-[9px] text-slate-400 mt-1 font-mono">Zonal Line Intersect</div>
                       </div>
                     </div>
@@ -188,11 +201,33 @@ export default function ResultsDisplay({
                       <div className="text-[9px] text-slate-400 font-mono mt-0.5">Grid 30N aligned</div>
                     </div>
                   </div>
+
+                  {/* Simulated Human Displacement - shown conditionally when simulation has displacement metrics */}
+                  {stats && stats.selectedScenario && stats.selectedScenario.id !== "baseline" && (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-orange-950/20 border border-orange-900/35 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg border border-orange-850 bg-orange-950/50 text-orange-400 flex items-center justify-center font-semibold text-sm">
+                          🛟
+                        </div>
+                        <div>
+                          <div className="text-[11.5px] text-orange-300 font-semibold leading-none">Projected Evacuees</div>
+                          <div className="text-[9px] text-orange-400/80 mt-1 font-mono">Displacement factor {stats.selectedScenario.displacementCoef}x</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-base font-bold font-mono text-orange-400">
+                          {stats.estimatedDisplacedPeople ? stats.estimatedDisplacedPeople.toLocaleString() : "—"}
+                        </div>
+                        <div className="text-[9px] text-orange-500/80 font-mono mt-0.5">projected displacement</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="text-[10px] text-slate-500 font-mono mt-4 pt-4 border-t border-slate-900/40">
                 ⚡ Estimations compiled dynamically relative to the target pinpoint.
+
               </div>
             </div>
 

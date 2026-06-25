@@ -1,6 +1,6 @@
 import { useState, useTransition } from "react";
 import { Settings, RefreshCw, Navigation, Waves, Shield, ChevronDown, ChevronUp } from "lucide-react";
-import { GHANA_PRESETS } from "../types";
+import { GHANA_PRESETS, CLIMATE_SCENARIOS } from "../types";
 
 interface ControlPanelProps {
   inputMode: "wgs84" | "utm30n";
@@ -20,6 +20,8 @@ interface ControlPanelProps {
   onPresetSelect: (preset: any) => void;
   onUTMConvertAndAnalyze: () => void;
   onWGSAnalyze: () => void;
+  selectedScenarioId: string;
+  onScenarioChange: (id: string) => void;
 }
 
 export default function ControlPanel({
@@ -40,6 +42,8 @@ export default function ControlPanel({
   onPresetSelect,
   onUTMConvertAndAnalyze,
   onWGSAnalyze,
+  selectedScenarioId,
+  onScenarioChange,
 }: ControlPanelProps) {
   const [, startTransition] = useTransition();
   const [isPresetsOpen, setIsPresetsOpen] = useState<boolean>(false);
@@ -86,7 +90,7 @@ export default function ControlPanel({
 
       {/* Geohazard Parameters Form */}
       <div className={`${tc.cardBg} border border-slate-800/80 rounded-xl p-5 shadow-lg`}>
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-4 border-b border-slate-800/60 pb-3">
           <h2 className="text-xs font-bold font-display uppercase tracking-wider text-slate-400 flex items-center gap-2">
             <Settings className="w-4 h-4 text-slate-400" />
             Vulnerability Controls
@@ -109,6 +113,33 @@ export default function ControlPanel({
               UTM-30N
             </button>
           </div>
+        </div>
+
+        {/* 🌊 Climate Scenario Selector */}
+        <div className="mb-4 pb-4 border-b border-slate-800/60">
+          <label className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 mb-1.5 flex items-center gap-1.5">
+            <Waves className={`w-3.5 h-3.5 ${tc.textAccent}`} />
+            Climate Scenario Simulation
+          </label>
+          <div className="relative">
+            <select
+              value={selectedScenarioId}
+              onChange={(e) => onScenarioChange(e.target.value)}
+              className="w-full bg-slate-950/95 border border-slate-800 hover:border-slate-700/80 rounded px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer transition-all"
+            >
+              {CLIMATE_SCENARIOS.map((scen) => (
+                <option key={scen.id} value={scen.id}>
+                  {scen.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <p className="text-[10px] text-slate-400 mt-1.5 leading-relaxed bg-slate-950/40 p-2.5 rounded border border-slate-900/80 font-sans">
+            {CLIMATE_SCENARIOS.find((sc) => sc.id === selectedScenarioId)?.description}
+            <span className="block mt-1 text-[9px] font-mono text-slate-500">
+              Multipliers: Rainfall {CLIMATE_SCENARIOS.find((sc) => sc.id === selectedScenarioId)?.rainfallFactor}x | Buffer Area {CLIMATE_SCENARIOS.find((sc) => sc.id === selectedScenarioId)?.radiusMultiplier}x | Displacement {CLIMATE_SCENARIOS.find((sc) => sc.id === selectedScenarioId)?.displacementCoef}x
+            </span>
+          </p>
         </div>
 
         {/* Form Inputs based on Coordinate Systems */}

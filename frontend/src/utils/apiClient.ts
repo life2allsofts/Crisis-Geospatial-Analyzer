@@ -11,7 +11,8 @@ export interface AnalysisApiResponse {
 export async function clearcacheAndFetchApi(
   latitude: number,
   longitude: number,
-  bufferRadius: number
+  bufferRadius: number,
+  scenarioId?: string
 ): Promise<AnalysisApiResponse> {
   const response = await fetch("/api/analyze", {
     method: "POST",
@@ -22,6 +23,7 @@ export async function clearcacheAndFetchApi(
       latitude,
       longitude,
       bufferRadius,
+      scenarioId,
     }),
   });
 

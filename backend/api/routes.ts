@@ -15,7 +15,7 @@ const GHANA_BOUNDS = {
 
 apiRouter.post("/analyze", async (req: Request, res: Response) => {
   try {
-    const { latitude, longitude, bufferRadius = 2000 } = req.body;
+    const { latitude, longitude, bufferRadius = 2000, scenarioId } = req.body;
 
     const lat = parseFloat(latitude);
     const lng = parseFloat(longitude);
@@ -52,8 +52,8 @@ apiRouter.post("/analyze", async (req: Request, res: Response) => {
       lng >= GHANA_BOUNDS.minLng &&
       lng <= GHANA_BOUNDS.maxLng;
 
-    // Execute core geospatial analytics
-    const geoAnalysis = performGeospatialAnalysis(lat, lng, radiusMeters);
+    // Execute core geospatial analytics with the chosen climate scenario
+    const geoAnalysis = performGeospatialAnalysis(lat, lng, radiusMeters, scenarioId);
 
     // Call RAG LLM summary logic (includes fallback in case of missing keys)
     const aiAssessment = await generateAiRiskAssessment(geoAnalysis);

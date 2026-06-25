@@ -5,7 +5,9 @@ import {
   LocationPreset,
   GeospatialStats,
   AiRiskResponse,
-  AnalyzeApiResponse
+  AnalyzeApiResponse,
+  CLIMATE_SCENARIOS,
+  ClimateScenarioInfo
 } from "./types";
 import { MapView, ControlPanel, ResultsDisplay } from "./components";
 import { utm30NToLatLng, isCoordinateInGhana } from "./utils/geoUtils";
@@ -24,6 +26,9 @@ export default function App() {
   const [utmNorthing, setUtmNorthing] = useState<string>("617942");
 
   const [bufferRadius, setBufferRadius] = useState<number>(2000); // meters
+
+  // Active simulated climate scenario ID
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string>("baseline");
 
   // Realized state values passed to Map and Services
   const [latitude, setLatitude] = useState<number>(5.5891);
@@ -52,9 +57,10 @@ export default function App() {
   // Load backend health details on startup
   useEffect(() => {
     fetchHealthStatus();
-    // Run initial analysis for Accra Circle confluence
-    handleRunAnalysis(5.5891, -0.2145, 2000);
+    // Run initial analysis for Accra Circle confluence under baseline
+    handleRunAnalysis(5.5891, -0.2145, 2000, "baseline");
   }, []);
+
 
   const fetchHealthStatus = async () => {
     try {
@@ -109,7 +115,12 @@ export default function App() {
     handleRunAnalysis(lat, lng, bufferRadius);
   };
 
-  const handleRunAnalysis = async (lat: number, lng: number, radius: number) => {
+  const handleScenarioChange = (newScenarioId: string) => {
+    setSelectedScenarioId(newScenarioId);
+    handleRunAnalysis(latitude, longitude, bufferRadius, newScenarioId);
+  };
+
+  const handleRunAnalysis = async (lat: number, lng: number, radius: number, scenarioId: string = selectedScenarioId) => {
     setIsLoading(true);
     setErrorMsg(null);
 
@@ -120,7 +131,8 @@ export default function App() {
         body: JSON.stringify({
           latitude: lat,
           longitude: lng,
-          bufferRadius: radius
+          bufferRadius: radius,
+          scenarioId
         })
       });
 
@@ -141,6 +153,7 @@ export default function App() {
       setIsLoading(false);
     }
   };
+
 
   // Updates parameters immediately when clicking a preset
   const handlePresetSelect = (preset: LocationPreset) => {
@@ -395,8 +408,11 @@ export default function App() {
               onPresetSelect={handlePresetSelect}
               onUTMConvertAndAnalyze={handleUTMProjection}
               onWGSAnalyze={executePipeline}
+              selectedScenarioId={selectedScenarioId}
+              onScenarioChange={handleScenarioChange}
             />
           </div>
+
 
           {/* ==================== CENTER & RIGHT VISUALIZER ==================== */}
           <div className="lg:col-span-8 flex flex-col gap-6">
