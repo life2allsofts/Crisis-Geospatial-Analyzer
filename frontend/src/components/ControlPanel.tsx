@@ -1,5 +1,5 @@
 import { useState, useTransition } from "react";
-import { Settings, RefreshCw, Navigation, Waves, Shield } from "lucide-react";
+import { Settings, RefreshCw, Navigation, Waves, Shield, ChevronDown, ChevronUp } from "lucide-react";
 import { GHANA_PRESETS } from "../types";
 
 interface ControlPanelProps {
@@ -42,34 +42,46 @@ export default function ControlPanel({
   onWGSAnalyze,
 }: ControlPanelProps) {
   const [, startTransition] = useTransition();
+  const [isPresetsOpen, setIsPresetsOpen] = useState<boolean>(false);
 
   return (
     <div className="space-y-6">
       {/* Target Ghana Floodplains Presets */}
       <div className={`${tc.cardBg} border border-slate-800/80 rounded-xl p-5 shadow-lg transition-all`}>
-        <h2 className="text-xs font-bold font-display uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
-          <Waves className={`w-4 h-4 ${tc.textAccent}`} />
-          Target Ghana Floodplains
-        </h2>
-        <div className="grid grid-cols-1 gap-2.5">
-          {GHANA_PRESETS.map((preset) => (
-            <button
-              key={preset.name}
-              onClick={() => startTransition(() => onPresetSelect(preset))}
-              className={`group text-left p-3 rounded-lg border border-slate-800/80 ${tc.btnSecondary} bg-slate-950/40 hover:bg-slate-950/80 transition-all flex justify-between items-center`}
-            >
-              <div>
-                <div className={`text-xs font-semibold text-slate-200 transition-colors ${tc.hoverAccentText}`}>
-                  {preset.name}
+        <button
+          onClick={() => setIsPresetsOpen(!isPresetsOpen)}
+          className="w-full text-left flex justify-between items-center focus:outline-none cursor-pointer group"
+        >
+          <h2 className="text-xs font-bold font-display uppercase tracking-wider text-slate-400 flex items-center gap-2 group-hover:text-slate-200 transition-colors">
+            <Waves className={`w-4 h-4 ${tc.textAccent}`} />
+            Target Ghana Floodplains
+          </h2>
+          <div className="text-slate-400 group-hover:text-slate-200 transition-colors">
+            {isPresetsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </div>
+        </button>
+        
+        {isPresetsOpen && (
+          <div className="grid grid-cols-1 gap-2.5 mt-4 animate-in fade-in slide-in-from-top-2 duration-150">
+            {GHANA_PRESETS.map((preset) => (
+              <button
+                key={preset.name}
+                onClick={() => startTransition(() => onPresetSelect(preset))}
+                className={`group text-left p-3 rounded-lg border border-slate-800/80 ${tc.btnSecondary} bg-slate-950/40 hover:bg-slate-950/80 transition-all flex justify-between items-center`}
+              >
+                <div>
+                  <div className={`text-xs font-semibold text-slate-200 transition-colors ${tc.hoverAccentText}`}>
+                    {preset.name}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">{preset.region}</div>
                 </div>
-                <div className="text-[10px] text-slate-400 mt-0.5">{preset.region}</div>
-              </div>
-              <span className={`text-[9px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-855 text-slate-400 transition-all ${tc.accentBadge}`}>
-                {preset.dangerLevel}
-              </span>
-            </button>
-          ))}
-        </div>
+                <span className={`text-[9px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-855 text-slate-400 transition-all ${tc.accentBadge}`}>
+                  {preset.dangerLevel}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Geohazard Parameters Form */}
