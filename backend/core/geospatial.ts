@@ -1,5 +1,6 @@
 import { GHANA_FLOOD_ZONES, FloodZone } from "../data/ghana_flood_zones.js";
 import { CLIMATE_SCENARIOS, ClimateScenario } from "../data/climate_scenarios.js";
+import { ElevationProfile, getElevationProfile } from "../data/elevation.js";
 
 // Haversine formula to compute geodesic distance between two points in kilometers
 export function calculateHaversineDistance(
@@ -45,6 +46,7 @@ export interface GeospatialAnalysisResult {
   riskFactors: string[];
   selectedScenario?: ClimateScenario;
   estimatedDisplacedPeople?: number;
+  elevationProfile: ElevationProfile;
 }
 
 export function performGeospatialAnalysis(
@@ -56,6 +58,9 @@ export function performGeospatialAnalysis(
   const scenario = CLIMATE_SCENARIOS.find(s => s.id === scenarioId) || CLIMATE_SCENARIOS[0];
   const originalBufferRadiusKm = bufferRadiusMeters / 1000;
   const simulatedBufferRadiusKm = originalBufferRadiusKm * scenario.radiusMultiplier;
+
+  // 0. Compute Digital Elevation Model (DEM) profile
+  const elevationProfile = getElevationProfile(lat, lng, bufferRadiusMeters);
 
   // 1. Find nearest flood risk zone
   let nearestZone: FloodZone | null = null;
@@ -158,6 +163,32 @@ export function performGeospatialAnalysis(
     riskFactors.push(`Significant population displacement risk projected: ${estimatedDisplacedPeople.toLocaleString()} residents`);
   }
 
+  // 5. Evaluate Elevation and Slope Topography factors
+  if (elevationProfile.slopePercent > 8) {
+    riskFactors.push(`Steep topography with high slope gradient (${elevationProfile.slopePercent}%) accelerates surface runoff toward drainage lines`);
+    if (evaluatedSeverity === "LOW") {
+      evaluatedSeverity = "MEDIUM";
+    } else if (evaluatedSeverity === "MEDIUM") {
+      evaluatedSeverity = "HIGH";
+    }
+  } else if (elevationProfile.slopePercent < 1.5 && elevationProfile.pointElevation < 25) {
+    riskFactors.push(`Extremely flat terrain (${elevationProfile.slopePercent}%) and low altitude (${elevationProfile.pointElevation}m ASL) creates a severe risk of prolonged water logging`);
+    if (evaluatedSeverity === "LOW") {
+      evaluatedSeverity = "MEDIUM";
+    } else if (evaluatedSeverity === "MEDIUM") {
+      evaluatedSeverity = "HIGH";
+    } else if (evaluatedSeverity === "HIGH") {
+      evaluatedSeverity = "CRITICAL";
+    }
+  } else if (elevationProfile.pointElevation < 10) {
+    riskFactors.push(`Ultra-low-lying elevation (${elevationProfile.pointElevation}m ASL) increases vulnerability to storm surges, lagoons backup, and poor drainage`);
+    if (evaluatedSeverity === "LOW") {
+      evaluatedSeverity = "MEDIUM";
+    } else if (evaluatedSeverity === "MEDIUM") {
+      evaluatedSeverity = "HIGH";
+    }
+  }
+
   // If outside all hazard zones and population is low:
   if (riskFactors.length === 0) {
     riskFactors.push("Stable inland topography with low simulated exposure");
@@ -177,7 +208,8 @@ export function performGeospatialAnalysis(
     evaluatedSeverity,
     riskFactors,
     selectedScenario: scenario,
-    estimatedDisplacedPeople
+    estimatedDisplacedPeople,
+    elevationProfile
   };
 }
 
@@ -209,6 +241,7 @@ export async function analyzeLocation(
   region: string | null;
   selectedScenario?: ClimateScenario;
   estimatedDisplacedPeople?: number;
+  elevationProfile: ElevationProfile;
 }> {
   // Perform the detailed geospatial analysis
   const result = performGeospatialAnalysis(lat, lon, bufferRadiusMeters, scenarioId);
@@ -230,7 +263,8 @@ export async function analyzeLocation(
     severity: result.evaluatedSeverity,
     region: result.nearestFloodZone?.region || null,
     selectedScenario: result.selectedScenario,
-    estimatedDisplacedPeople: result.estimatedDisplacedPeople
+    estimatedDisplacedPeople: result.estimatedDisplacedPeople,
+    elevationProfile: result.elevationProfile
   };
 }
 
@@ -323,3 +357,5 @@ export { GHANA_FLOOD_ZONES } from '../data/ghana_flood_zones.js';
 export type { FloodZone } from '../data/ghana_flood_zones.js';
 export { CLIMATE_SCENARIOS } from '../data/climate_scenarios.js';
 export type { ClimateScenario } from '../data/climate_scenarios.js';
+export { getElevationProfile } from '../data/elevation.js';
+export type { ElevationProfile } from '../data/elevation.js';

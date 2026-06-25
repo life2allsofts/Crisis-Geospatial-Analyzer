@@ -1,14 +1,3 @@
----
-title: Ghana Crisis Geospatial Analyzer
-emoji: 🌍
-colorFrom: red
-colorTo: pink
-sdk: docker
-sdk_version: "1.0"
-pinned: false
-license: mit
-app_port: 7860
----
 # 🌍 Ghana Crisis Geospatial Analyzer
 
 > AI-powered geospatial crisis response system for Ghana with RAG-based reasoning, custom color themes, and interactive mapping.
@@ -141,6 +130,7 @@ app_port: 7860
 │   │
 │   └── data/
 │       ├── index.ts                     # Data exports wrapper
+│       ├── elevation.ts                 # Ghana elevation grid and DEM interpolation functions
 │       └── ghana_flood_zones.ts         # Ghana hydrological datasets
 │
 └── frontend/                            # React frontend
@@ -173,8 +163,9 @@ app_port: 7860
 | **`server.ts`** | Production server. Delivers the client SPA assets during production and attaches custom Express API middleware layers (`/api`) dynamically. |
 | **`backend/api/routes.ts`** | Handles geographical requests, coordinate bounds, and prompts. Incorporates specific coordinate ranges verification. |
 | **`backend/core/geospatial.ts`** | Computes topological math such as population exposure counts on WorldPop dataset estimations, building asset overlaps, and regional road network statistics. |
-| **`backend/core/llm_service.ts`** | Feeds zonal metrics with historical reference contexts to Structured Gemini Flash LLM to obtain precise mitigation plans and scientific breakdowns. |
+| **`backend/core/llm_service.ts`** | Feeds zonal metrics, historical reference contexts, and terrain slope/elevation properties to Structured Gemini Flash LLM to obtain precise mitigation plans and scientific breakdowns. |
 | **`backend/core/rag_retriever.ts`** | Looks up the geographically closest risk-prone physical plane, calculating exact spatial distances and historic notes for inclusion in RAG contexts. |
+| **`backend/data/elevation.ts`** | Realizes a high-fidelity Digital Elevation Model (DEM) for Ghana using Inverse Distance Weighting interpolation and continuous fractals to model slopes, aspect headings, and elevation profiles. |
 | **`backend/data/ghana_flood_zones.ts`** | Stores coordinate centroids, risk classifications, and historic hydrological descriptions of major plains (Akwapim, Odaw Basin, Akosombo spillways, etc.) in Ghana. |
 | **`frontend/src/App.tsx`** | Coordinates the global theme state selector, layout templates, parameter changes, active coordinates, and user interactiveness. |
 | **`frontend/src/components/MapView.tsx`** | Leaflet-centered interactive map. Plots hazard buffer guidelines, target centroids, and listens to user coordinate clicks. |
@@ -276,9 +267,15 @@ Once the calculations complete, the results are organized into an interactive, m
   * **Exposed Roads Network**: Computes the cumulative length (in km) of roads overlapping the hazard buffer.
   * **Projected Evacuees**: Active only during simulations, this card estimates potential human displacement numbers based on water level intensity coefficients.
   * **Computed Risk Drivers**: Outlines specific structural vulnerabilities (such as low elevation or coastal proximity) that drive risks at the targeted coordinate.
+  * **⛰️ Terrain & Slope Intelligence Panel**:
+    * **Center Elevation**: Displays precise altitude above sea level (meters ASL) at the targeted center.
+    * **Slope Gradient**: Calculates the percentage and degree gradient slope (e.g. flagging steeper zones prone to heavy runoff velocity and flatter basins prone to pooling).
+    * **Slope Aspect**: Reports the physical aspect heading (compass direction of descending slope).
+    * **Buffer Profile Span**: Summarizes elevation range (Minimum, Maximum, and Mean elevations) within the buffer sphere.
+    * **📈 Trans-Section Elevation Spline Chart**: Renders a dynamic, theme-responsive SVG line chart mapping the elevation cross-section from South-West to North-East across the active buffer area, marking the pinpoint center.
 
 * **Generative AI Report Tab**:
-  * **Gemini Generative Reasoning**: Delivers a comprehensive scientific and hydrological report utilizing our Gemini RAG pipelines to contextualize local rainfall patterns, active climate scenario stress factors, historic spillway releases, and water basins.
+  * **Gemini Generative Reasoning**: Delivers a comprehensive scientific and hydrological report utilizing our Gemini RAG pipelines to contextualize local rainfall patterns, active climate scenario stress factors, historic spillway releases, water basins, and local DEM properties (elevation, slope percentage, terrain roughness) to provide tailored risk assessments.
 
 * **Action Plan & Sources Tab**:
   * **Interactive Mitigation Recommendations**: A localized action checklist tailored to the target coordinate (e.g., drainage desiltation, real-time warning sensors) that users can mark complete in real-time.

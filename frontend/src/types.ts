@@ -18,6 +18,23 @@ export interface ClimateScenarioInfo {
   displacementCoef: number;
 }
 
+export interface ElevationProfileInfo {
+  pointElevation: number;
+  slope: number;
+  slopePercent: number;
+  aspect: number;
+  aspectDirection: string;
+  minElevation: number;
+  maxElevation: number;
+  meanElevation: number;
+  profilePoints: Array<{
+    distanceKm: number;
+    elevation: number;
+    lat: number;
+    lng: number;
+  }>;
+}
+
 export interface GeospatialStats {
   latitude: number;
   longitude: number;
@@ -33,6 +50,7 @@ export interface GeospatialStats {
   riskFactors: string[];
   selectedScenario?: ClimateScenarioInfo;
   estimatedDisplacedPeople?: number;
+  elevationProfile: ElevationProfileInfo;
 }
 
 export interface CitationInfo {

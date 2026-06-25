@@ -443,6 +443,7 @@ export default function App() {
               riskStyle={riskStyle}
               checkedRecommendations={checkedRecommendations}
               toggleRecommendation={toggleRecommendation}
+              theme={theme}
             />
 
           </div>
