@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GeospatialStats } from "../types";
 
 interface MapViewProps {
@@ -32,6 +32,7 @@ export default function MapView({
   const activePinRef = useRef<any>(null);
   const activeBufferCircleRef = useRef<any>(null);
   const hazardOverlaysRef = useRef<any[]>([]);
+  const [legendOpen, setLegendOpen] = useState(false);
 
   useEffect(() => {
     // 1. Double check if Leaflet L is loaded via CDN inside index.html
@@ -147,31 +148,50 @@ export default function MapView({
 
   }, [latitude, longitude, bufferRadiusMeters, stats]);
 
+  const toggleLegend = () => {
+    setLegendOpen(!legendOpen);
+  };
+
   return (
     <div className="relative w-full h-[320px] md:h-full min-h-[300px] border border-slate-700 rounded-xl overflow-hidden shadow-2xl bg-slate-950">
       <div ref={mapContainerRef} className="w-full h-full" id="geospatial-visualizer-canvas" />
       
-      {/* Absolute floating map legend indicating status colors */}
-      <div className="absolute bottom-4 right-4 z-[999] bg-slate-900/90 backdrop-blur border border-slate-700 rounded-lg p-3 text-[11px] font-sans flex flex-col gap-1.5 shadow-xl max-w-[200px]">
-        <div className="text-slate-400 font-semibold uppercase tracking-wider text-[9px] mb-1">Hazard Legend</div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-[#ef4444] border border-white/20" />
-          <span className="text-slate-200">Critical Watershed Hazard</span>
+      {/* ✅ Collapsible Hazard Legend */}
+      <div className="absolute bottom-4 right-4 z-[999] bg-slate-900/90 backdrop-blur border border-slate-700 rounded-lg shadow-xl max-w-[200px] overflow-hidden transition-all duration-300">
+        {/* Legend Header - Always Visible */}
+        <div
+          onClick={toggleLegend}
+          className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-slate-800/50 transition-colors select-none"
+        >
+          <span className="text-slate-400 font-semibold uppercase tracking-wider text-[9px]">🗺️ Hazard Legend</span>
+          <span className={`text-slate-400 text-xs transition-transform duration-300 ${legendOpen ? 'rotate-180' : 'rotate-0'}`}>
+            ▼
+          </span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-[#f97316] border border-white/20" />
-          <span className="text-slate-200">High Coastal/River Spill</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-[#eab308] border border-white/20" />
-          <span className="text-slate-200">Medium Lowlands / Urban</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-[#10b981] border border-white/20" />
-          <span className="text-slate-200">Low-Risk Elevated Ground</span>
-        </div>
-        <div className="mt-1 pt-1 border-t border-slate-800 text-[10px] text-slate-400 text-center font-mono">
-          Click map to relocate pin
+
+        {/* Legend Items - Collapsible */}
+        <div className={`transition-all duration-300 overflow-hidden ${legendOpen ? 'max-h-[200px] opacity-100' : 'max-h-0 opacity-0'}`}>
+          <div className="px-3 pb-3 pt-1 border-t border-slate-800/50">
+            <div className="flex items-center gap-2 py-1">
+              <div className="w-3 h-3 rounded-full bg-[#ef4444] border border-white/20 flex-shrink-0" />
+              <span className="text-slate-300 text-[10px]">Critical Watershed Hazard</span>
+            </div>
+            <div className="flex items-center gap-2 py-1">
+              <div className="w-3 h-3 rounded-full bg-[#f97316] border border-white/20 flex-shrink-0" />
+              <span className="text-slate-300 text-[10px]">High Coastal/River Spill</span>
+            </div>
+            <div className="flex items-center gap-2 py-1">
+              <div className="w-3 h-3 rounded-full bg-[#eab308] border border-white/20 flex-shrink-0" />
+              <span className="text-slate-300 text-[10px]">Medium Lowlands / Urban</span>
+            </div>
+            <div className="flex items-center gap-2 py-1">
+              <div className="w-3 h-3 rounded-full bg-[#10b981] border border-white/20 flex-shrink-0" />
+              <span className="text-slate-300 text-[10px]">Low-Risk Elevated Ground</span>
+            </div>
+            <div className="mt-2 pt-1 border-t border-slate-800/50 text-[8px] text-slate-500 text-center font-mono">
+              Click map to relocate pin
+            </div>
+          </div>
         </div>
       </div>
     </div>
