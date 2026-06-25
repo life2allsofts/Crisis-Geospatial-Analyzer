@@ -1,3 +1,14 @@
+---
+title: Ghana Crisis Geospatial Analyzer
+emoji: 🌍
+colorFrom: red
+colorTo: pink
+sdk: docker
+sdk_version: "1.0"
+pinned: false
+license: mit
+app_port: 7860
+---
 # 🌍 Ghana Crisis Geospatial Analyzer
 
 > AI-powered geospatial crisis response system for Ghana with RAG-based reasoning, custom color themes, and interactive mapping.
@@ -331,3 +342,4 @@ npm run lint
 ## 📝 License
 
 This project is open-source and licensed under the MIT License.
+
