@@ -1,5 +1,5 @@
-import { GHANA_FLOOD_ZONES, FloodZone } from "../data/ghana_flood_zones";
-import { CLIMATE_SCENARIOS, ClimateScenario } from "../data/climate_scenarios";
+import { GHANA_FLOOD_ZONES, FloodZone } from "../data/ghana_flood_zones.js";
+import { CLIMATE_SCENARIOS, ClimateScenario } from "../data/climate_scenarios.js";
 
 // Haversine formula to compute geodesic distance between two points in kilometers
 export function calculateHaversineDistance(
@@ -180,3 +180,146 @@ export function performGeospatialAnalysis(
     estimatedDisplacedPeople
   };
 }
+
+// ============================================
+// WRAPPER FUNCTION FOR TESTS AND API ROUTES
+// ============================================
+
+/**
+ * Wrapper function that matches the expected API for tests and routes
+ * Converts the detailed analysis to a simplified result format
+ */
+export async function analyzeLocation(
+  lat: number,
+  lon: number,
+  bufferRadiusMeters: number = 2000,
+  scenarioId?: string
+): Promise<{
+  latitude: number;
+  longitude: number;
+  floodRisk: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  floodZone: string | null;
+  floodZoneId: string | null;
+  populationExposed: number;
+  buildingsAffected: number;
+  distanceToRisk: number;
+  riskFactors: string[];
+  historicalContext: string[];
+  severity: string;
+  region: string | null;
+  selectedScenario?: ClimateScenario;
+  estimatedDisplacedPeople?: number;
+}> {
+  // Perform the detailed geospatial analysis
+  const result = performGeospatialAnalysis(lat, lon, bufferRadiusMeters, scenarioId);
+
+  // Convert to the simplified format expected by tests and routes
+  return {
+    latitude: lat,
+    longitude: lon,
+    floodRisk: result.evaluatedSeverity,
+    floodZone: result.nearestFloodZone?.name || null,
+    floodZoneId: result.nearestFloodZone?.id || null,
+    populationExposed: result.estimatedPeopleExposed,
+    buildingsAffected: result.estimatedBuildingsExposed,
+    distanceToRisk: result.distanceToNearestZoneKm,
+    riskFactors: result.riskFactors,
+    historicalContext: result.nearestFloodZone?.historicalContext 
+      ? [result.nearestFloodZone.historicalContext] 
+      : ['No historical context available'],
+    severity: result.evaluatedSeverity,
+    region: result.nearestFloodZone?.region || null,
+    selectedScenario: result.selectedScenario,
+    estimatedDisplacedPeople: result.estimatedDisplacedPeople
+  };
+}
+
+// ============================================
+// ADDITIONAL UTILITY FUNCTIONS
+// ============================================
+
+/**
+ * Convert Ghana Grid coordinates (Easting, Northing) to Geographic (Lat, Lon)
+ * UTM Zone 30N projection for Ghana
+ */
+export function convertGridToGeo(easting: number, northing: number): { lat: number; lon: number } {
+  // Simplified conversion - in production use proper UTM library
+  // Ghana uses UTM Zone 30N (EPSG:32630)
+  const lon = (easting - 500000) / 111320; // Rough approximation
+  const lat = northing / 111320;
+  
+  return {
+    lat: lat,
+    lon: lon
+  };
+}
+
+/**
+ * Convert Geographic coordinates to Ghana Grid
+ */
+export function convertGeoToGrid(lat: number, lon: number): { easting: number; northing: number } {
+  // Simplified conversion - in production use proper UTM library
+  const easting = lon * 111320 + 500000;
+  const northing = lat * 111320;
+  
+  return {
+    easting: easting,
+    northing: northing
+  };
+}
+
+/**
+ * Create a buffer zone around a point
+ */
+export function createBuffer(lat: number, lon: number, radiusKm: number): {
+  center: { lat: number; lon: number };
+  radius: number;
+} {
+  return {
+    center: { lat, lon },
+    radius: radiusKm
+  };
+}
+
+/**
+ * Check if a point is within any flood zone
+ * Returns the flood zone if found, null otherwise
+ */
+export function pointInPolygon(lat: number, lon: number): { inZone: boolean; zoneName: string | null } {
+  for (const zone of GHANA_FLOOD_ZONES) {
+    const distance = calculateHaversineDistance(lat, lon, zone.coordinates.lat, zone.coordinates.lng);
+    if (distance <= zone.radiusKm) {
+      return { inZone: true, zoneName: zone.name };
+    }
+  }
+  return { inZone: false, zoneName: null };
+}
+
+/**
+ * Get all flood zones
+ */
+export function getAllFloodZones(): FloodZone[] {
+  return GHANA_FLOOD_ZONES;
+}
+
+/**
+ * Get flood zone by ID
+ */
+export function getFloodZoneById(id: string): FloodZone | undefined {
+  return GHANA_FLOOD_ZONES.find(zone => zone.id === id);
+}
+
+/**
+ * Get flood zones by region
+ */
+export function getFloodZonesByRegion(region: string): FloodZone[] {
+  return GHANA_FLOOD_ZONES.filter(zone => zone.region.includes(region));
+}
+
+// ============================================
+// RE-EXPORT FOR CONVENIENCE
+// ============================================
+export { GHANA_FLOOD_ZONES } from '../data/ghana_flood_zones.js';
+export type { FloodZone } from '../data/ghana_flood_zones.js';
+export { CLIMATE_SCENARIOS } from '../data/climate_scenarios.js';
+export type { ClimateScenario } from '../data/climate_scenarios.js';
