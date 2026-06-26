@@ -1,6 +1,7 @@
 import { GHANA_FLOOD_ZONES, FloodZone } from "../data/ghana_flood_zones.js";
 import { CLIMATE_SCENARIOS, ClimateScenario } from "../data/climate_scenarios.js";
 import { ElevationProfile, getElevationProfile } from "../data/elevation.js";
+import { findNearestSafeHavens, SafeHavenWithDistance } from "../core/safe_haven.js";
 
 // Haversine formula to compute geodesic distance between two points in kilometers
 export function calculateHaversineDistance(
@@ -47,6 +48,7 @@ export interface GeospatialAnalysisResult {
   selectedScenario?: ClimateScenario;
   estimatedDisplacedPeople?: number;
   elevationProfile: ElevationProfile;
+  safeHavens?: SafeHavenWithDistance[];
 }
 
 export function performGeospatialAnalysis(
@@ -63,7 +65,10 @@ export function performGeospatialAnalysis(
   console.log(`🔍 [geospatial] Executing DEM analysis for target pivot: (${lat}, ${lng}) with buffer ${bufferRadiusMeters}m`);
   const elevationProfile = getElevationProfile(lat, lng, bufferRadiusMeters);
   console.log(`📊 [geospatial] Target center elevation is ${elevationProfile.pointElevation}m ASL, slope is ${elevationProfile.slopePercent}% (${elevationProfile.aspectDirection} slope aspect)`);
-  console.log(`📈 [geospatial] Elevation range: ${elevationProfile.minElevation}m - ${elevationProfile.maxElevation}m (mean: ${elevationProfile.meanElevation}m)`);
+
+  // 0b. Find nearest safe havens
+  const safeHavens = findNearestSafeHavens(lat, lng, 3);
+  console.log(`🏥 [geospatial] Found ${safeHavens.length} safe havens within proximity`);
 
   // 1. Find nearest flood risk zone
   let nearestZone: FloodZone | null = null;
@@ -212,7 +217,8 @@ export function performGeospatialAnalysis(
     riskFactors,
     selectedScenario: scenario,
     estimatedDisplacedPeople,
-    elevationProfile
+    elevationProfile,
+    safeHavens
   };
 }
 
@@ -245,6 +251,7 @@ export async function analyzeLocation(
   selectedScenario?: ClimateScenario;
   estimatedDisplacedPeople?: number;
   elevationProfile: ElevationProfile;
+  safeHavens?: SafeHavenWithDistance[];
 }> {
   // Perform the detailed geospatial analysis
   const result = performGeospatialAnalysis(lat, lon, bufferRadiusMeters, scenarioId);
@@ -267,7 +274,8 @@ export async function analyzeLocation(
     region: result.nearestFloodZone?.region || null,
     selectedScenario: result.selectedScenario,
     estimatedDisplacedPeople: result.estimatedDisplacedPeople,
-    elevationProfile: result.elevationProfile
+    elevationProfile: result.elevationProfile,
+    safeHavens: result.safeHavens
   };
 }
 
@@ -362,3 +370,5 @@ export { CLIMATE_SCENARIOS } from '../data/climate_scenarios.js';
 export type { ClimateScenario } from '../data/climate_scenarios.js';
 export { getElevationProfile } from '../data/elevation.js';
 export type { ElevationProfile } from '../data/elevation.js';
+export { findNearestSafeHavens } from '../core/safe_haven.js';
+export type { SafeHavenWithDistance } from '../core/safe_haven.js';

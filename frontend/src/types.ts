@@ -51,6 +51,23 @@ export interface GeospatialStats {
   selectedScenario?: ClimateScenarioInfo;
   estimatedDisplacedPeople?: number;
   elevationProfile: ElevationProfileInfo;
+  safeHavens?: SafeHavenWithDistance[];
+}
+
+export interface SafeHaven {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  type: string;
+  capacity: number;
+  region: string;
+  contact: string;
+  evacuationRoutes: string[];
+}
+
+export interface SafeHavenWithDistance extends SafeHaven {
+  distanceKm: number;
 }
 
 export interface CitationInfo {

@@ -172,7 +172,9 @@ app_port: 7860
 | **`Dockerfile`** | Pre-configured multi-stage alpine container setup specifically designed to bind to port 7860 for Hugging Face Spaces. |
 | **`.github/workflows/ci-cd.yml`** | Fully automated CD script containing code evaluation, custom Node-based spatial simulation tests, compile workflows, and GitHub-to-HuggingFace repository syncing logic. |
 | **`server.ts`** | Production server. Delivers the client SPA assets during production and attaches custom Express API middleware layers (`/api`) dynamically. |
-| **`backend/api/routes.ts`** | Handles geographical requests, coordinate bounds, and prompts. Incorporates specific coordinate ranges verification. |
+| **`backend/api/routes.ts`** | Handles geographical requests, coordinate bounds, and prompts. Incorporates specific coordinate ranges verification and exposes the `/api/safe-havens` endpoint. |
+| **`backend/core/safe_haven.ts`** | Nearest safe havens locator utilizing Haversine distance calculations. |
+| **`backend/data/safe_havens.ts`** | Curated list of NADMO-certified safe havens across all regions of Ghana, complete with coordinates, capacity, and recommended routes. |
 | **`backend/core/geospatial.ts`** | Computes topological math such as population exposure counts on WorldPop dataset estimations, building asset overlaps, and regional road network statistics. |
 | **`backend/core/llm_service.ts`** | Feeds zonal metrics, historical reference contexts, and terrain slope/elevation properties to Structured Gemini Flash LLM to obtain precise mitigation plans and scientific breakdowns. |
 | **`backend/core/rag_retriever.ts`** | Looks up the geographically closest risk-prone physical plane, calculating exact spatial distances and historic notes for inclusion in RAG contexts. |
@@ -181,7 +183,8 @@ app_port: 7860
 | **`frontend/src/App.tsx`** | Coordinates the global theme state selector, layout templates, parameter changes, active coordinates, and user interactiveness. |
 | **`frontend/src/components/MapView.tsx`** | Leaflet-centered interactive map. Plots hazard buffer guidelines, target centroids, and listens to user coordinate clicks. |
 | **`frontend/src/components/ControlPanel.tsx`** | Custom input component. Includes coordinate toggle cards (WGS-84 coordinate coordinates or UTM-30N Grid meters), target selections, and geographical radius sliders. |
-| **`frontend/src/components/ResultsDisplay.tsx`** | Consolidates and renders output results. Houses metrics counters, structural metrics checklists, and collapsible checkboxes for evacuation recommendations. |
+| **`frontend/src/components/ResultsDisplay.tsx`** | Consolidates and renders output results. Houses metrics counters, structural metrics checklists, and collapsible checkboxes for evacuation recommendations. Supports 4 interactive tabs including Live Safe Havens. |
+| **`frontend/src/components/SafeHavens.tsx`** | High-fidelity safe haven metrics cards listing details and interactive NADMO Regional Emergency Hotline directory lookup. |
 | **`frontend/src/utils/geoUtils.ts`** | Conducts standard mathematical conversion from UTM Zone 30N (Ghana National Grid UTM format) to generic lat/lng decimals. |
 | **`frontend/src/utils/apiClient.ts`** | Client interface wrapper that performs standardized network HTTP fetches to backend route paths. |
 
@@ -327,6 +330,11 @@ The application combines raw geographic calculation with generative text analysi
    - Under active simulations, check the **Projected Evacuees** card for human displacement forecasts.
    - Read the structured AI reasoning blocks to review local hydrological history and context.
    - Use the **Mitigation Actions Checklist** to mark recommended safety actions (such as regular desiltation or early evacuation alerts) as complete.
+
+6. **Lookup Nearest Safe Havens & NADMO Directory**:
+   - Select the **🏥 Safe Havens & NADMO** tab inside the results panel.
+   - Review the calculated top 3 closest certified safe havens, complete with geodesic distances, capacities, regional contacts, and structured route recommendations.
+   - Use the built-in search bar in the **NADMO Ghana Directory** panel to find regional offices and click to dial direct hotlines (including national toll-free lines *112* and *193*).
 
 ---
 

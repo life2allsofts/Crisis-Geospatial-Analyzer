@@ -13,6 +13,7 @@ import {
   Layers
 } from "lucide-react";
 import { GeospatialStats, RiskAnalysisAiResponse } from "../types";
+import SafeHavens from "./SafeHavens";
 
 interface ResultsDisplayProps {
   stats: GeospatialStats | null;
@@ -25,7 +26,7 @@ interface ResultsDisplayProps {
   theme: string;
 }
 
-type ActiveTab = "metrics" | "ai_report" | "action_plan";
+type ActiveTab = "metrics" | "ai_report" | "action_plan" | "safe_havens";
 
 export default function ResultsDisplay({
   stats,
@@ -114,6 +115,18 @@ export default function ResultsDisplay({
         >
           <ClipboardList className="w-4 h-4 shrink-0" />
           <span>Action Plan & Sources</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("safe_havens")}
+          className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold font-display tracking-wide uppercase transition-all duration-200 cursor-pointer ${
+            activeTab === "safe_havens"
+              ? `bg-gradient-to-r ${tc.btnGradient} text-white shadow-md`
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/50"
+          }`}
+        >
+          <ShieldAlert className="w-4 h-4 shrink-0" />
+          <span>🏥 Safe Havens & NADMO</span>
         </button>
       </div>
 
@@ -613,6 +626,11 @@ export default function ResultsDisplay({
               </div>
             </div>
           </div>
+        )}
+
+        {/* ================== TAB 4: SAFE HAVENS & NADMO EMERGENCY DIRECTORY ================== */}
+        {activeTab === "safe_havens" && (
+          <SafeHavens stats={stats} tc={tc} theme={theme} />
         )}
 
       </div>

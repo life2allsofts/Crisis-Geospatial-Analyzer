@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { performGeospatialAnalysis } from "../core/geospatial";
 import { generateAiRiskAssessment } from "../core/llm_service";
+import { findNearestSafeHavens } from "../core/safe_haven";
 
 export const apiRouter = Router();
 export const router = apiRouter;
@@ -70,6 +71,35 @@ apiRouter.post("/analyze", async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: "Surgical analysis failed inside geospatial backend.",
+      details: error.message
+    });
+  }
+});
+
+apiRouter.get("/safe-havens", (req: Request, res: Response) => {
+  try {
+    const lat = parseFloat(req.query.lat as string || req.query.latitude as string);
+    const lng = parseFloat(req.query.lng as string || req.query.longitude as string);
+    const limit = parseInt(req.query.limit as string || "3");
+
+    if (isNaN(lat) || isNaN(lng)) {
+      res.status(400).json({
+        success: false,
+        error: "Missing or invalid latitude/longitude parameters.",
+      });
+      return;
+    }
+
+    const havens = findNearestSafeHavens(lat, lng, limit);
+    res.json({
+      success: true,
+      safeHavens: havens,
+    });
+  } catch (error: any) {
+    console.error("Error fetching safe havens:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to retrieve nearest safe havens",
       details: error.message
     });
   }
