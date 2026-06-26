@@ -269,3 +269,18 @@ export const CLIMATE_SCENARIOS: ClimateScenarioInfo[] = [
   }
 ];
 
+export interface HistoricalFloodEvent {
+  id: string;
+  year: number;
+  eventName: string;
+  regions: string[];
+  peopleDisplaced: number;
+  deaths?: number;
+  propertyDamage: string;
+  trigger: string;
+  severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  description: string;
+  source: string;
+}
+
+

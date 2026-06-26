@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { performGeospatialAnalysis } from "../core/geospatial";
 import { generateAiRiskAssessment } from "../core/llm_service";
 import { findNearestSafeHavens } from "../core/safe_haven";
+import { GHANA_HISTORICAL_FLOODS } from "../data/historical_floods";
 
 export const apiRouter = Router();
 export const router = apiRouter;
@@ -100,6 +101,44 @@ apiRouter.get("/safe-havens", (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: "Failed to retrieve nearest safe havens",
+      details: error.message
+    });
+  }
+});
+
+apiRouter.get("/historical-events", (req: Request, res: Response) => {
+  try {
+    const { region, startYear, endYear } = req.query;
+    let events = [...GHANA_HISTORICAL_FLOODS];
+
+    if (region && typeof region === "string" && region !== "all" && region.trim() !== "") {
+      const lowerRegion = region.toLowerCase().trim();
+      events = events.filter(e => e.regions.some(r => r.toLowerCase().includes(lowerRegion)));
+    }
+
+    if (startYear) {
+      const start = parseInt(startYear as string);
+      if (!isNaN(start)) {
+        events = events.filter(e => e.year >= start);
+      }
+    }
+
+    if (endYear) {
+      const end = parseInt(endYear as string);
+      if (!isNaN(end)) {
+        events = events.filter(e => e.year <= end);
+      }
+    }
+
+    res.json({
+      success: true,
+      events
+    });
+  } catch (error: any) {
+    console.error("Error fetching historical events:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to retrieve historical events",
       details: error.message
     });
   }

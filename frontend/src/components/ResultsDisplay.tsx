@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { GeospatialStats, RiskAnalysisAiResponse } from "../types";
 import SafeHavens from "./SafeHavens";
+import TimelineChart from "./TimelineChart";
 
 interface ResultsDisplayProps {
   stats: GeospatialStats | null;
@@ -26,7 +27,7 @@ interface ResultsDisplayProps {
   theme: string;
 }
 
-type ActiveTab = "metrics" | "ai_report" | "action_plan" | "safe_havens";
+type ActiveTab = "metrics" | "ai_report" | "action_plan" | "safe_havens" | "historical_timeline";
 
 export default function ResultsDisplay({
   stats,
@@ -127,6 +128,18 @@ export default function ResultsDisplay({
         >
           <ShieldAlert className="w-4 h-4 shrink-0" />
           <span>🏥 Safe Havens & NADMO</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("historical_timeline")}
+          className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold font-display tracking-wide uppercase transition-all duration-200 cursor-pointer ${
+            activeTab === "historical_timeline"
+              ? `bg-gradient-to-r ${tc.btnGradient} text-white shadow-md`
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/50"
+          }`}
+        >
+          <Layers className="w-4 h-4 shrink-0" />
+          <span>📊 Historical Timeline</span>
         </button>
       </div>
 
@@ -631,6 +644,11 @@ export default function ResultsDisplay({
         {/* ================== TAB 4: SAFE HAVENS & NADMO EMERGENCY DIRECTORY ================== */}
         {activeTab === "safe_havens" && (
           <SafeHavens stats={stats} tc={tc} theme={theme} />
+        )}
+
+        {/* ================== TAB 5: HISTORICAL FLOODING TIMELINE CHART ================== */}
+        {activeTab === "historical_timeline" && (
+          <TimelineChart tc={tc} theme={theme} />
         )}
 
       </div>
