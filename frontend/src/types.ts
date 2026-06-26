@@ -134,6 +134,86 @@ export const GHANA_PRESETS: LocationPreset[] = [
     lng: -2.3124,
     bufferRadius: 2000,
     dangerLevel: "LOW"
+  },
+  {
+    name: "Tarkwa Gold Mining Valley",
+    region: "Western Region",
+    lat: 5.3014,
+    lng: -2.0024,
+    bufferRadius: 2500,
+    dangerLevel: "HIGH"
+  },
+  {
+    name: "Sekondi-Takoradi Coast",
+    region: "Western Region",
+    lat: 4.8871,
+    lng: -1.7485,
+    bufferRadius: 2000,
+    dangerLevel: "HIGH"
+  },
+  {
+    name: "Bolgatanga White Volta Plain",
+    region: "Upper East Region",
+    lat: 10.7856,
+    lng: -0.8514,
+    bufferRadius: 3500,
+    dangerLevel: "CRITICAL"
+  },
+  {
+    name: "Wa South Lowland Basin",
+    region: "Upper West Region",
+    lat: 9.8974,
+    lng: -2.5085,
+    bufferRadius: 2200,
+    dangerLevel: "MEDIUM"
+  },
+  {
+    name: "Cape Coast Erosion Belt",
+    region: "Central Region",
+    lat: 5.1053,
+    lng: -1.2464,
+    bufferRadius: 1800,
+    dangerLevel: "HIGH"
+  },
+  {
+    name: "Kasoa Akweley Junction",
+    region: "Central Region",
+    lat: 5.5424,
+    lng: -0.4215,
+    bufferRadius: 2000,
+    dangerLevel: "HIGH"
+  },
+  {
+    name: "Koforidua Nsukwao Basin",
+    region: "Eastern Region",
+    lat: 6.0945,
+    lng: -0.2591,
+    bufferRadius: 1800,
+    dangerLevel: "HIGH"
+  },
+  {
+    name: "Buipe Black Volta Crossing",
+    region: "Savannah Region",
+    lat: 8.7845,
+    lng: -1.5423,
+    bufferRadius: 3200,
+    dangerLevel: "HIGH"
+  },
+  {
+    name: "Nkwanta River Siltation",
+    region: "Oti Region",
+    lat: 8.2575,
+    lng: 0.5214,
+    bufferRadius: 2000,
+    dangerLevel: "MEDIUM"
+  },
+  {
+    name: "Goaso Tano River Basin",
+    region: "Ahafo Region",
+    lat: 6.8041,
+    lng: -2.5183,
+    bufferRadius: 2000,
+    dangerLevel: "MEDIUM"
   }
 ];
 

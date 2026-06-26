@@ -17,7 +17,17 @@ const REFERENCE_HAZARDS = [
   { name: "Mepe Lower Volta Basin", lat: 5.9875, lng: 0.6120, radiusM: 4500, severity: "CRITICAL" },
   { name: "Sogakope Coastal Delta Buffer", lat: 5.9984, lng: 0.5968, radiusM: 3500, severity: "HIGH" },
   { name: "Aboabo Kumasi Drainage", lat: 6.6948, lng: -1.6144, radiusM: 1500, severity: "HIGH" },
-  { name: "Tamale South Lowland Plains", lat: 9.3824, lng: -0.8354, radiusM: 3000, severity: "MEDIUM" }
+  { name: "Tamale South Lowland Plains", lat: 9.3824, lng: -0.8354, radiusM: 3000, severity: "MEDIUM" },
+  { name: "Tarkwa Gold Mining Valley", lat: 5.3014, lng: -2.0024, radiusM: 2500, severity: "HIGH" },
+  { name: "Sekondi-Takoradi Coastal Storm Buffer", lat: 4.8871, lng: -1.7485, radiusM: 2000, severity: "HIGH" },
+  { name: "Bolgatanga White Volta Floodplain", lat: 10.7856, lng: -0.8514, radiusM: 3500, severity: "CRITICAL" },
+  { name: "Wa South Lowland Basin", lat: 9.8974, lng: -2.5085, radiusM: 2200, severity: "MEDIUM" },
+  { name: "Cape Coast Coastal Erosion Belt", lat: 5.1053, lng: -1.2464, radiusM: 1800, severity: "HIGH" },
+  { name: "Kasoa Akweley Drain Junction", lat: 5.5424, lng: -0.4215, radiusM: 2000, severity: "HIGH" },
+  { name: "Koforidua Nsukwao Basin", lat: 6.0945, lng: -0.2591, radiusM: 1800, severity: "HIGH" },
+  { name: "Buipe Black Volta Crossing", lat: 8.7845, lng: -1.5423, radiusM: 3200, severity: "HIGH" },
+  { name: "Nkwanta River Siltation Zone", lat: 8.2575, lng: 0.5214, radiusM: 2000, severity: "MEDIUM" },
+  { name: "Goaso Tano River Basin", lat: 6.8041, lng: -2.5183, radiusM: 2000, severity: "MEDIUM" }
 ];
 
 // Map tile layer URLs

@@ -239,7 +239,7 @@ Follow these sequential steps to perform a complete geospatial risk analysis and
 ### 1. Inputting Coordinates
 You can target any regional area inside Ghana using three different methods of input:
 * **Interactive Map Clicks**: Scroll, zoom, and select any location on the integrated map. A simple left-click on the map automatically extracts the location's decimal coordinates (Latitude/Longitude in WGS-84 format), centers the marker, and prompts the backend calculation pipelines.
-* **Geographical Presets**: Locate the **Target Ghana Floodplains** panel. Click on the header to expand the presets list, and select top risk hotspots such as the *Odaw River Basin (Accra)*, *Weija Dam Catchment (Ga South)*, *Keta Lagoon Flats*, or the *Akosombo Spillway Zone* to instantly load and run the analysis. This panel is fully collapsible to maximize the available space on smaller screens.
+* **Geographical Presets**: Locate the **Target Ghana Floodplains** panel. Click on the header to expand the presets list, and select from a complete list of 15+ comprehensive nationwide presets spanning all key regions of Ghana (e.g., *Odaw River Basin*, *Akosombo Spillway Zone*, *Tarkwa Gold Mining Valley* in the Western Region, *Bolgatanga White Volta Plain* in the Upper East, *Cape Coast Erosion Belt* in the Central Region, *Buipe Crossing* in Savannah, and *Koforidua Nsukwao Basin* in the Eastern Region). This panel is fully collapsible to maximize the available space on smaller screens.
 * **Manual Input (WGS-84 format)**:
   1. Click the **WGS-84** button in the Control Panel.
   2. Enter the decimal degrees directly (e.g. Latitude: `5.5891`, Longitude: `-0.2145` for Central Accra).
@@ -311,7 +311,7 @@ The application combines raw geographic calculation with generative text analysi
    
 2. **Set Target Coordinates**:
    - **Click Coordinates Directly**: Move around the Leaflet map and single-click anywhere. The pin will jump to your target and automatically run updated calculations.
-   - **Target Regional Presets**: Click any floodplain button under the "Target Ghana Floodplains" list (e.g., *Akosombo Spillway Zone*, *Odaw River Basin*, *Weija Dam Catchment*) to load its location instantly.
+   - **Target Regional Presets**: Click any floodplain button under the "Target Ghana Floodplains" list (e.g., *Akosombo Spillway Zone*, *Odaw River Basin*, *Tarkwa Gold Mining Valley*, *Bolgatanga White Volta Plain*) to load its location instantly.
    - **Manual Latitude & Longitude**: Select the **WGS-84** tab and type numeric inputs directly.
    - **Ghana UTM Grid Entry**: Select the **UTM-30N** tab, input the local transverse mercator Northing/Easting coordinates, and click *Convert Grid & Analyze*.
 
@@ -342,4 +342,3 @@ npm run lint
 ## 📝 License
 
 This project is open-source and licensed under the MIT License.
-
