@@ -60,7 +60,10 @@ export function performGeospatialAnalysis(
   const simulatedBufferRadiusKm = originalBufferRadiusKm * scenario.radiusMultiplier;
 
   // 0. Compute Digital Elevation Model (DEM) profile
+  console.log(`🔍 [geospatial] Executing DEM analysis for target pivot: (${lat}, ${lng}) with buffer ${bufferRadiusMeters}m`);
   const elevationProfile = getElevationProfile(lat, lng, bufferRadiusMeters);
+  console.log(`📊 [geospatial] Target center elevation is ${elevationProfile.pointElevation}m ASL, slope is ${elevationProfile.slopePercent}% (${elevationProfile.aspectDirection} slope aspect)`);
+  console.log(`📈 [geospatial] Elevation range: ${elevationProfile.minElevation}m - ${elevationProfile.maxElevation}m (mean: ${elevationProfile.meanElevation}m)`);
 
   // 1. Find nearest flood risk zone
   let nearestZone: FloodZone | null = null;
