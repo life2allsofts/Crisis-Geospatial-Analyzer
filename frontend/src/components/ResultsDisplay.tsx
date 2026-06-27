@@ -10,7 +10,8 @@ import {
   ShieldAlert,
   Sparkles,
   ClipboardList,
-  Layers
+  Layers,
+  Compass
 } from "lucide-react";
 import { GeospatialStats, RiskAnalysisAiResponse } from "../types";
 import SafeHavens from "./SafeHavens";
@@ -26,9 +27,59 @@ interface ResultsDisplayProps {
   checkedRecommendations: Record<number, boolean>;
   toggleRecommendation: (idx: number) => void;
   theme: string;
+  selectedHavenId: string | null;
+  setSelectedHavenId: (id: string | null) => void;
+  activeEscapeRoute: any | null;
+  isRouteLoading: boolean;
+  activeScreen: string;
+  setActiveScreen: (screen: any) => void;
+  onlyShowBanner?: boolean;
 }
 
-type ActiveTab = "metrics" | "ai_report" | "action_plan" | "safe_havens" | "historical_timeline";
+interface EscapeRouteProps {
+  route: any | null;
+  isLoading: boolean;
+  tc: any;
+  theme: string;
+}
+
+function EscapeRoute({ route, isLoading, tc, theme }: EscapeRouteProps) {
+  if (isLoading) {
+    return (
+      <div className="py-16 bg-slate-950/30 border border-slate-900 rounded-lg text-center text-slate-400 text-[11px] italic font-sans flex flex-col justify-center items-center gap-2">
+        <RefreshCw className={`w-6 h-6 animate-spin ${tc.textAccent}`} />
+        <span>Routing data is being generated. Please wait...</span>
+      </div>
+    );
+  }
+
+  if (!route) {
+    return (
+      <div className="py-16 bg-slate-950/30 border border-slate-900 rounded-lg text-center text-slate-400 text-[11px] italic font-sans">
+        No active escape route is currently loaded. Select a safe haven to generate the evacuation path.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="text-sm font-semibold text-slate-200">Escape Route Overview</div>
+      <div className="text-[11px] text-slate-300 leading-relaxed">
+        {route.summary || "Detailed escape route data is available for the selected haven."}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[10px] text-slate-400">
+        <div className="p-3 rounded-lg bg-slate-950/40 border border-slate-900/60">
+          <div className="font-semibold text-slate-200">Distance</div>
+          <div>{route.distanceKm ? `${route.distanceKm.toFixed(1)} km` : "N/A"}</div>
+        </div>
+        <div className="p-3 rounded-lg bg-slate-950/40 border border-slate-900/60">
+          <div className="font-semibold text-slate-200">Estimated Time</div>
+          <div>{route.estimatedTime || "N/A"}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ResultsDisplay({
   stats,
@@ -39,8 +90,15 @@ export default function ResultsDisplay({
   checkedRecommendations,
   toggleRecommendation,
   theme,
+  selectedHavenId,
+  setSelectedHavenId,
+  activeEscapeRoute,
+  isRouteLoading,
+  activeScreen,
+  setActiveScreen,
+  onlyShowBanner = false,
 }: ResultsDisplayProps) {
-  const [activeTab, setActiveTab] = useState<ActiveTab>("metrics");
+  const activeTab = activeScreen;
 
   return (
     <div className="space-y-6">
@@ -57,7 +115,7 @@ export default function ResultsDisplay({
           <h3 className={`text-xl md:text-2xl font-black font-display tracking-tight mt-1 ${riskStyle.text}`}>
             {stats ? `${stats.evaluatedSeverity} RISK HAZARD LEVEL` : "AWAITING TELEMETRY ANALYSIS"}
           </h3>
-          <p className="text-xs text-slate-300 leading-relaxed mt-1.5 max-w-3xl">
+          <p className="text-xs text-slate-300 leading-relaxed mt-1.5 max-w-3xl font-sans">
             {stats
               ? stats.isInsideZone
                 ? `The selected site directly overlaps the active hazardous margin of the "${stats.nearestFloodZone?.name}" zone within the ${stats.nearestFloodZone?.region} region.`
@@ -69,7 +127,7 @@ export default function ResultsDisplay({
         {stats && (
           <div className="z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="shrink-0 bg-slate-950/80 border border-slate-800/80 rounded-lg px-4 py-3 flex flex-col items-center justify-center text-center font-mono min-w-[120px]">
-              <span className="text-[9px] text-slate-400 uppercase">Zonal Proximity</span>
+              <span className="text-[9px] text-slate-400 uppercase font-mono">Zonal Proximity</span>
               <span className={`text-sm font-black mt-0.5 ${riskStyle.text}`}>
                 {stats.distanceToNearestZoneKm.toFixed(2)} km
               </span>
@@ -92,71 +150,70 @@ export default function ResultsDisplay({
         </div>
       </div>
 
-      {/* 🧭 Modular Menu Tab Switcher */}
-      <div className="flex bg-slate-950/90 p-1 rounded-xl border border-slate-800/80 gap-1 overflow-x-auto scrollbar-none">
-        <button
-          onClick={() => setActiveTab("metrics")}
-          className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold font-display tracking-wide uppercase transition-all duration-200 cursor-pointer ${
-            activeTab === "metrics"
-              ? `bg-gradient-to-r ${tc.btnGradient} text-white shadow-md`
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/50"
-          }`}
-        >
-          <Building className="w-4 h-4 shrink-0" />
-          <span>Exposure & Assets</span>
-        </button>
+      {onlyShowBanner ? (
+        <div className="space-y-4">
+          {stats && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+              <div 
+                onClick={() => setActiveScreen && setActiveScreen("metrics")}
+                className="p-4 bg-slate-950/40 hover:bg-slate-900/60 border border-slate-800/85 hover:border-indigo-500/40 rounded-xl transition-all cursor-pointer group shadow-lg flex flex-col justify-between min-h-[120px]"
+              >
+                <div>
+                  <h4 className="text-xs font-bold text-slate-200 font-display flex items-center gap-1.5 uppercase tracking-wide">
+                    <span className="text-base">🏘️</span>
+                    Exposure & Terrain
+                  </h4>
+                  <p className="text-[10.5px] text-slate-400 mt-2 leading-normal font-sans">
+                    View estimated exposed residents, OSM building footprints, affected roads, and terrain aspect profiles.
+                  </p>
+                </div>
+                <span className={`text-[10px] font-bold font-mono mt-3 inline-flex items-center gap-1 ${tc.textAccent} group-hover:underline`}>
+                  Open Screen →
+                </span>
+              </div>
 
-        <button
-          onClick={() => setActiveTab("ai_report")}
-          className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold font-display tracking-wide uppercase transition-all duration-200 cursor-pointer ${
-            activeTab === "ai_report"
-              ? `bg-gradient-to-r ${tc.btnGradient} text-white shadow-md`
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/50"
-          }`}
-        >
-          <Sparkles className="w-4 h-4 shrink-0" />
-          <span>Generative AI Report</span>
-        </button>
+              <div 
+                onClick={() => setActiveScreen && setActiveScreen("ai_report")}
+                className="p-4 bg-slate-950/40 hover:bg-slate-900/60 border border-slate-800/85 hover:border-indigo-500/40 rounded-xl transition-all cursor-pointer group shadow-lg flex flex-col justify-between min-h-[120px]"
+              >
+                <div>
+                  <h4 className="text-xs font-bold text-slate-200 font-display flex items-center gap-1.5 uppercase tracking-wide">
+                    <span className="text-base">🤖</span>
+                    Generative AI Report
+                  </h4>
+                  <p className="text-[10.5px] text-slate-400 mt-2 leading-normal font-sans">
+                    Read full RAG-based risk ratings, local geology comments, and computed flood mitigation drivers.
+                  </p>
+                </div>
+                <span className={`text-[10px] font-bold font-mono mt-3 inline-flex items-center gap-1 ${tc.textAccent} group-hover:underline`}>
+                  Open Screen →
+                </span>
+              </div>
 
-        <button
-          onClick={() => setActiveTab("action_plan")}
-          className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold font-display tracking-wide uppercase transition-all duration-200 cursor-pointer ${
-            activeTab === "action_plan"
-              ? `bg-gradient-to-r ${tc.btnGradient} text-white shadow-md`
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/50"
-          }`}
-        >
-          <ClipboardList className="w-4 h-4 shrink-0" />
-          <span>Action Plan & Sources</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("safe_havens")}
-          className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold font-display tracking-wide uppercase transition-all duration-200 cursor-pointer ${
-            activeTab === "safe_havens"
-              ? `bg-gradient-to-r ${tc.btnGradient} text-white shadow-md`
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/50"
-          }`}
-        >
-          <ShieldAlert className="w-4 h-4 shrink-0" />
-          <span>🏥 Safe Havens & NADMO</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("historical_timeline")}
-          className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold font-display tracking-wide uppercase transition-all duration-200 cursor-pointer ${
-            activeTab === "historical_timeline"
-              ? `bg-gradient-to-r ${tc.btnGradient} text-white shadow-md`
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/50"
-          }`}
-        >
-          <Layers className="w-4 h-4 shrink-0" />
-          <span>📊 Historical Timeline</span>
-        </button>
-      </div>
-
-      {/* 📦 Tab Content Display Panels */}
-      <div className="transition-all duration-300">
+              <div 
+                onClick={() => setActiveScreen && setActiveScreen("safe_havens")}
+                className="p-4 bg-slate-950/40 hover:bg-slate-900/60 border border-slate-800/85 hover:border-indigo-500/40 rounded-xl transition-all cursor-pointer group shadow-lg flex flex-col justify-between min-h-[120px] sm:col-span-2 lg:col-span-1"
+              >
+                <div>
+                  <h4 className="text-xs font-bold text-slate-200 font-display flex items-center gap-1.5 uppercase tracking-wide">
+                    <span className="text-base">🏥</span>
+                    Safe Havens & Routes
+                  </h4>
+                  <p className="text-[10.5px] text-slate-400 mt-2 leading-normal font-sans">
+                    Calculate nearest high-elevation NADMO safe havens and plan your custom evacuation routes.
+                  </p>
+                </div>
+                <span className={`text-[10px] font-bold font-mono mt-3 inline-flex items-center gap-1 ${tc.textAccent} group-hover:underline`}>
+                  Open Screen →
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* 📦 Tab Content Display Panels */}
+          <div className="transition-all duration-300">
         
         {/* ================== TAB 1: EXPOSURE & ASSETS ================== */}
         {activeTab === "metrics" && (
@@ -515,6 +572,25 @@ export default function ResultsDisplay({
 
             </div>
 
+            {/* 🔗 Interactive Next Screen Navigation Alert */}
+            <div className="lg:col-span-12 p-4 bg-indigo-950/20 border border-indigo-900/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-2">
+              <div>
+                <span className="text-xs font-bold text-indigo-400 font-display uppercase tracking-wider block">
+                  👉 Physical Metrics Analysed!
+                </span>
+                <span className="text-[11px] text-slate-300 leading-relaxed mt-1 block font-sans">
+                  To see how these physical metrics translate into a full RAG-based hydrological risk rating and safety comment, click to open the Generative AI Assessment screen.
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveScreen("ai_report")}
+                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+              >
+                <span>Open Generative AI Report</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
           </div>
         )}
 
@@ -564,6 +640,26 @@ export default function ResultsDisplay({
                 )}
               </div>
             </div>
+
+            {/* 🔗 Interactive Next Screen Navigation Alert */}
+            <div className="p-4 bg-emerald-950/20 border border-emerald-500/20 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-6">
+              <div>
+                <span className="text-xs font-bold text-emerald-400 font-display uppercase tracking-wider block">
+                  👉 AI Analysis Review Complete!
+                </span>
+                <span className="text-[11px] text-slate-300 leading-relaxed mt-1 block font-sans">
+                  To formulate and track active safety protocols, checklists, and view official scientific source attributions, open the Action Plan screen.
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveScreen("action_plan")}
+                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+              >
+                <span>Open Action Plan & Sources</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
           </div>
         )}
 
@@ -650,20 +746,138 @@ export default function ResultsDisplay({
                 </div>
               </div>
             </div>
+
+            {/* 🔗 Interactive Next Screen Navigation Alert */}
+            <div className="md:col-span-12 p-4 bg-indigo-950/20 border border-indigo-900/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-2">
+              <div>
+                <span className="text-xs font-bold text-indigo-400 font-display uppercase tracking-wider block">
+                  👉 Safety Recommendations Verified!
+                </span>
+                <span className="text-[11px] text-slate-300 leading-relaxed mt-1 block font-sans">
+                  Ready to map a physical escape route to safety? Open the Safe Havens screen to list the closest shelter locations, capacities, and NADMO responder directory.
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveScreen("safe_havens")}
+                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+              >
+                <span>Find Safe Havens</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
           </div>
         )}
 
         {/* ================== TAB 4: SAFE HAVENS & NADMO EMERGENCY DIRECTORY ================== */}
         {activeTab === "safe_havens" && (
-          <SafeHavens stats={stats} tc={tc} theme={theme} />
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <SafeHavens 
+              stats={stats} 
+              tc={tc} 
+              theme={theme} 
+              selectedHavenId={selectedHavenId}
+              setSelectedHavenId={setSelectedHavenId}
+              activeEscapeRoute={activeEscapeRoute}
+              isRouteLoading={isRouteLoading}
+              onNavigateToRoute={() => setActiveScreen("escape_route")}
+            />
+            
+            {/* 🔗 Interactive Next Screen Navigation Alert */}
+            <div className="p-4 bg-indigo-950/20 border border-indigo-900/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-xs font-bold text-indigo-400 font-display uppercase tracking-wider block">
+                  👉 Safe Haven Target Selected!
+                </span>
+                <span className="text-[11px] text-slate-300 leading-relaxed mt-1 block font-sans">
+                  Ready to map the street-by-street walking path, estimated travel times, and high-precision elevation cross-section? Open the Active Escape Route Mapper screen.
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveScreen("escape_route")}
+                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+              >
+                <span>Open Escape Route Mapper</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ================== TAB: ESCAPE ROUTE PROFILE ================== */}
+        {activeTab === "escape_route" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <div className={`${tc.cardBg} border border-slate-800/85 rounded-xl p-6 shadow-lg`}>
+              <div className="flex items-center justify-between mb-4 border-b border-slate-900 pb-4">
+                <h3 className="text-sm font-bold font-display uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                  <Compass className={`w-4 h-4 ${tc.textAccent}`} />
+                  Escape Route Elevation Mapper
+                </h3>
+                <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded border border-indigo-500/20 text-indigo-400 bg-indigo-500/10`}>
+                  Active Evacuation Path
+                </span>
+              </div>
+
+              {/* Dedicate full-width to the EscapeRoute component */}
+              <EscapeRoute 
+                route={activeEscapeRoute} 
+                isLoading={isRouteLoading} 
+                tc={tc} 
+                theme={theme} 
+              />
+            </div>
+
+            {/* 🔗 Interactive Next Screen Navigation Alert */}
+            <div className="p-4 bg-indigo-950/20 border border-indigo-900/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-xs font-bold text-indigo-400 font-display uppercase tracking-wider block">
+                  👉 Evacuation Profile Plotted!
+                </span>
+                <span className="text-[11px] text-slate-300 leading-relaxed mt-1 block font-sans">
+                  Concerned about multi-decade riverine flood histories in this exact sector? Open the Historical Flooding Timeline to review major flood events in Ghana.
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveScreen("historical_timeline")}
+                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+              >
+                <span>Open Historical Timeline</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         )}
 
         {/* ================== TAB 5: HISTORICAL FLOODING TIMELINE CHART ================== */}
         {activeTab === "historical_timeline" && (
-          <TimelineChart tc={tc} theme={theme} />
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <TimelineChart tc={tc} theme={theme} />
+
+            {/* 🔗 Interactive Back Screen Navigation Alert */}
+            <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-xs font-bold text-slate-300 font-display uppercase tracking-wider block">
+                  👉 Regional Context Verified!
+                </span>
+                <span className="text-[11px] text-slate-400 leading-relaxed mt-1 block font-sans">
+                  Ready to run a new simulation or modify active coordinate parameters? Return to the main Interactive Flood Map screen.
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveScreen("map")}
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-750 text-slate-300 font-bold text-xs rounded-lg flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+              >
+                <span>Return to Interactive Map</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         )}
 
       </div>
+      </div>
+      )}
+
     </div>
   );
 }

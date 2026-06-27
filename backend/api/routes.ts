@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { performGeospatialAnalysis } from "../core/geospatial";
 import { generateAiRiskAssessment } from "../core/llm_service";
 import { findNearestSafeHavens } from "../core/safe_haven";
+import { calculateEscapeRoute } from "../core/escape_route";
 import { GHANA_HISTORICAL_FLOODS } from "../data/historical_floods";
 
 export const apiRouter = Router();
@@ -102,6 +103,43 @@ apiRouter.get("/safe-havens", (req: Request, res: Response) => {
       success: false,
       error: "Failed to retrieve nearest safe havens",
       details: error.message
+    });
+  }
+});
+
+apiRouter.get("/escape-route", async (req: Request, res: Response) => {
+  try {
+    const startLat = parseFloat(req.query.startLat as string);
+    const startLng = parseFloat(req.query.startLng as string);
+    const havenId = req.query.havenId as string;
+
+    if (isNaN(startLat) || isNaN(startLng) || !havenId) {
+      res.status(400).json({
+        success: false,
+        error: "Missing or invalid startLat, startLng, or havenId parameters.",
+      });
+      return;
+    }
+
+    const routeProfile = await calculateEscapeRoute(startLat, startLng, havenId);
+    if (!routeProfile) {
+      res.status(404).json({
+        success: false,
+        error: `Safe haven with ID "${havenId}" not found.`,
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      routeProfile,
+    });
+  } catch (error: any) {
+    console.error("Error calculating escape route:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to compute escape route elevation profile.",
+      details: error.message,
     });
   }
 });

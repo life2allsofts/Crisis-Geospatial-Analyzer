@@ -7,6 +7,7 @@ interface MapViewProps {
   bufferRadiusMeters: number;
   stats: GeospatialStats | null;
   onMapClick: (lat: number, lng: number) => void;
+  activeEscapeRoute?: any | null;
 }
 
 // Coordinate list of all known floodplains to render reference overlays on startup!
@@ -50,7 +51,8 @@ export default function MapView({
   longitude,
   bufferRadiusMeters,
   stats,
-  onMapClick
+  onMapClick,
+  activeEscapeRoute
 }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -58,6 +60,9 @@ export default function MapView({
   const activePinRef = useRef<any>(null);
   const activeBufferCircleRef = useRef<any>(null);
   const hazardOverlaysRef = useRef<any[]>([]);
+  const activeEscapeRouteLineRef = useRef<any>(null);
+  const activeEscapeRouteHavenRef = useRef<any>(null);
+  const activeEscapeRouteHazardsRef = useRef<any[]>([]);
   const [legendOpen, setLegendOpen] = useState(false);
   const [controlsOpen, setControlsOpen] = useState(false);
   const [mapStyle, setMapStyle] = useState<"dark" | "light" | "satellite" | "streets">("dark");
@@ -147,12 +152,24 @@ export default function MapView({
     // 3. Keep viewport updated to targeted coordinates
     map.setView([latitude, longitude], map.getZoom() < 10 ? 12 : map.getZoom());
 
-    // 4. Remove stale target markers
+    // 4. Remove stale target markers and previous routing layers
     if (activePinRef.current) {
       map.removeLayer(activePinRef.current);
     }
     if (activeBufferCircleRef.current) {
       map.removeLayer(activeBufferCircleRef.current);
+    }
+    if (activeEscapeRouteLineRef.current) {
+      map.removeLayer(activeEscapeRouteLineRef.current);
+      activeEscapeRouteLineRef.current = null;
+    }
+    if (activeEscapeRouteHavenRef.current) {
+      map.removeLayer(activeEscapeRouteHavenRef.current);
+      activeEscapeRouteHavenRef.current = null;
+    }
+    if (activeEscapeRouteHazardsRef.current && activeEscapeRouteHazardsRef.current.length > 0) {
+      activeEscapeRouteHazardsRef.current.forEach((layer) => map.removeLayer(layer));
+      activeEscapeRouteHazardsRef.current = [];
     }
 
     // 5. Stylize active buffer ring depending on calculated hazards
@@ -199,7 +216,87 @@ export default function MapView({
         </div>`
       );
 
-  }, [latitude, longitude, bufferRadiusMeters, stats]);
+    // 6. Draw escape route if present
+    if (activeEscapeRoute && activeEscapeRoute.profilePoints && activeEscapeRoute.profilePoints.length > 1) {
+      const points = activeEscapeRoute.profilePoints.map((p: any) => [p.lat, p.lng]);
+      const group = L.layerGroup().addTo(map);
+      activeEscapeRouteLineRef.current = group;
+
+      const profilePts = activeEscapeRoute.profilePoints;
+      for (let i = 1; i < profilePts.length; i++) {
+        const pt1 = profilePts[i - 1];
+        const pt2 = profilePts[i];
+        
+        const inHazard = pt1.isHazardZone || pt2.isHazardZone;
+        const color = inHazard ? "#ef4444" : "#10b981"; // Red for hazard, Emerald for secure
+        const weight = inHazard ? 5 : 4.5;
+        const dashArray = inHazard ? "3, 6" : "6, 6";
+
+        L.polyline([[pt1.lat, pt1.lng], [pt2.lat, pt2.lng]], {
+          color: color,
+          weight: weight,
+          dashArray: dashArray,
+          opacity: 0.95,
+        }).addTo(group);
+      }
+
+      // Add a clean sanctuary target icon
+      const havenIconHtml = `
+        <div class="relative flex items-center justify-center">
+          <span class="absolute inline-flex h-7 w-7 rounded-full bg-emerald-500/30 opacity-75 animate-pulse"></span>
+          <span class="relative inline-flex rounded-full h-4.5 w-4.5 bg-emerald-500 border-2 border-white flex items-center justify-center text-[10px] shadow-lg">🏟️</span>
+        </div>
+      `;
+      const havenIcon = L.divIcon({
+        html: havenIconHtml,
+        className: "custom-leaflet-haven-marker",
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+
+      activeEscapeRouteHavenRef.current = L.marker([activeEscapeRoute.havenLat, activeEscapeRoute.havenLng], { icon: havenIcon })
+        .addTo(map)
+        .bindPopup(`
+          <div class="text-slate-900 font-sans leading-tight">
+            <strong class="font-bold text-slate-700 block text-xs">DESTINATION SANCTUARY</strong>
+            <span class="text-xs font-semibold text-emerald-600 block mt-0.5">${activeEscapeRoute.havenName}</span>
+            <div class="mt-1 text-[11px] text-slate-500">Distance: <b>${activeEscapeRoute.totalDistanceKm} km</b> • Est. Walk: <b>${activeEscapeRoute.estimatedWalkTimeMins} mins</b></div>
+          </div>
+        `);
+
+      // Highlight hazards and warning spots along the escape path
+      activeEscapeRoute.profilePoints.forEach((pt: any) => {
+        if (pt.label && pt.label.includes("⚠️")) {
+          const hazardIconHtml = `
+            <div class="relative flex items-center justify-center">
+              <span class="absolute inline-flex h-5 w-5 rounded-full bg-amber-500/30 opacity-75 animate-ping"></span>
+              <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500 border border-white flex items-center justify-center text-[9px] font-bold text-slate-950 shadow-md">⚠️</span>
+            </div>
+          `;
+          const hazardIcon = L.divIcon({
+            html: hazardIconHtml,
+            className: "custom-leaflet-hazard-marker",
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          });
+          const marker = L.marker([pt.lat, pt.lng], { icon: hazardIcon })
+            .addTo(map)
+            .bindPopup(`
+              <div class="text-slate-900 font-sans leading-tight">
+                <strong class="font-bold text-amber-600 block">ROUTE LOW POINT</strong>
+                <span class="text-xs text-slate-500 font-mono">${pt.elevation}m elevation</span>
+                <div class="mt-1 text-xs text-slate-600">${pt.zoneName || "Low-elevation sector prone to pooling."}</div>
+              </div>
+            `);
+          activeEscapeRouteHazardsRef.current.push(marker);
+        }
+      });
+      
+      const bounds = L.latLngBounds(points);
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
+
+  }, [latitude, longitude, bufferRadiusMeters, stats, activeEscapeRoute]);
 
   const toggleLegend = () => {
     setLegendOpen(!legendOpen);

@@ -283,4 +283,29 @@ export interface HistoricalFloodEvent {
   source: string;
 }
 
+export interface EscapeRoutePoint {
+  distanceKm: number;
+  elevation: number;
+  lat: number;
+  lng: number;
+  label?: string;
+  isHazardZone: boolean;
+  zoneName?: string;
+}
+
+export interface EscapeRouteProfile {
+  havenId: string;
+  havenName: string;
+  havenLat: number;
+  havenLng: number;
+  startLat: number;
+  startLng: number;
+  totalDistanceKm: number;
+  estimatedWalkTimeMins: number;
+  profilePoints: EscapeRoutePoint[];
+  hasHazardCrossing: boolean;
+  lowestElevation: number;
+  routeAlert: string;
+}
+
 

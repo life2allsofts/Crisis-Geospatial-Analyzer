@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Globe, Clock, Palette, Menu, X, BookOpen } from "lucide-react";
+import { Globe, Clock, Palette, Menu, X, BookOpen, Building, Sparkles, ClipboardList, ShieldAlert, Compass, Layers, ArrowLeft } from "lucide-react";
 import {
   GHANA_PRESETS,
   LocationPreset,
@@ -7,10 +7,12 @@ import {
   AiRiskResponse,
   AnalyzeApiResponse,
   CLIMATE_SCENARIOS,
-  ClimateScenarioInfo
+  ClimateScenarioInfo,
+  EscapeRouteProfile
 } from "./types";
 import { MapView, ControlPanel, ResultsDisplay } from "./components";
 import { utm30NToLatLng, isCoordinateInGhana } from "./utils/geoUtils";
+import { fetchEscapeRoute } from "./utils/apiClient";
 
 type AppTheme = "midnight" | "emerald" | "crimson" | "amber";
 
@@ -41,6 +43,11 @@ export default function App() {
   const [aiData, setAiData] = useState<AiRiskResponse | null>(null);
   const [healthStatus, setHealthStatus] = useState<any>(null);
 
+  // Escape Route planning states
+  const [selectedHavenId, setSelectedHavenId] = useState<string | null>(null);
+  const [activeEscapeRoute, setActiveEscapeRoute] = useState<EscapeRouteProfile | null>(null);
+  const [isRouteLoading, setIsRouteLoading] = useState<boolean>(false);
+
   // Checked recommendations UX tracker
   const [checkedRecommendations, setCheckedRecommendations] = useState<Record<number, boolean>>({});
 
@@ -48,6 +55,9 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
   const [guideStep, setGuideStep] = useState<number>(1);
+
+  // Active screen layout state: "map" | "metrics" | "ai_report" | "action_plan" | "safe_havens" | "escape_route" | "historical_timeline"
+  const [activeScreen, setActiveScreen] = useState<string>("map");
 
   // Reset checked recommendations when ai data updates
   useEffect(() => {
@@ -60,6 +70,41 @@ export default function App() {
     // Run initial analysis for Accra Circle confluence under baseline
     handleRunAnalysis(5.5891, -0.2145, 2000, "baseline");
   }, []);
+
+  // Automatically select the nearest safe haven when new analysis results (stats) are loaded
+  useEffect(() => {
+    if (stats?.safeHavens && stats.safeHavens.length > 0) {
+      setSelectedHavenId(stats.safeHavens[0].id);
+    } else {
+      setSelectedHavenId(null);
+      setActiveEscapeRoute(null);
+    }
+  }, [stats]);
+
+  // Fetch escape route details whenever start position or targeted safe haven changes
+  useEffect(() => {
+    if (selectedHavenId && latitude && longitude) {
+      const loadRoute = async () => {
+        setIsRouteLoading(true);
+        try {
+          const res = await fetchEscapeRoute(latitude, longitude, selectedHavenId);
+          if (res.success) {
+            setActiveEscapeRoute(res.routeProfile);
+          } else {
+            setActiveEscapeRoute(null);
+          }
+        } catch (e) {
+          console.error("Error loading escape route:", e);
+          setActiveEscapeRoute(null);
+        } finally {
+          setIsRouteLoading(false);
+        }
+      };
+      loadRoute();
+    } else {
+      setActiveEscapeRoute(null);
+    }
+  }, [selectedHavenId, latitude, longitude]);
 
 
   const fetchHealthStatus = async () => {
@@ -338,44 +383,188 @@ export default function App() {
               <span>{new Date().toLocaleTimeString()} (GMT)</span>
             </div>
 
-            {/* 🍔 Hamburger menu button with dropdown list */}
+            {/* 🍔 Hamburger menu button with side sliding drawer */}
             <div className="relative">
               <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                onClick={() => setIsMenuOpen(true)}
                 className="flex items-center justify-center p-2 rounded-lg border border-slate-700/60 bg-slate-900/85 text-slate-300 hover:text-white hover:bg-slate-800 transition-all cursor-pointer shadow-sm focus:outline-none"
-                title="Open system menu"
+                title="Open Emergency Command Center"
               >
-                {isMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                <Menu className="w-4 h-4" />
               </button>
 
               {isMenuOpen && (
                 <>
-                  {/* Backdrop overlay to click away & auto-close */}
-                  <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-800/80 bg-slate-950 p-2 text-left shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                    <div className="px-3 py-1.5 text-[9px] font-mono tracking-wider text-slate-500 uppercase border-b border-slate-900 mb-1.5">
-                      System Metadata
+                  {/* Sliding Backdrop Overlay */}
+                  <div 
+                    className="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-40 animate-in fade-in duration-200" 
+                    onClick={() => setIsMenuOpen(false)} 
+                  />
+                  
+                  {/* Slide-out Drawer Panel */}
+                  <div className="fixed inset-y-0 right-0 max-w-sm w-full bg-slate-950 border-l border-slate-900 z-50 shadow-2xl flex flex-col justify-between h-full animate-in slide-in-from-right duration-250">
+                    
+                    {/* Drawer Content */}
+                    <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                      
+                      {/* Drawer Header */}
+                      <div className="flex items-center justify-between pb-4 border-b border-slate-900">
+                        <div>
+                          <span className="text-[10px] font-bold font-mono tracking-widest text-indigo-400 uppercase">
+                            Emergency Command Center
+                          </span>
+                          <h3 className="text-base font-black font-display tracking-tight text-white mt-0.5">
+                            GHANA HYDRO v1.0
+                          </h3>
+                        </div>
+                        <button
+                          onClick={() => setIsMenuOpen(false)}
+                          className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-850 text-slate-400 hover:text-white transition-all cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Section 1: ACTIVE CRITICAL SCREENS */}
+                      <div className="space-y-3">
+                        <span className="text-[9px] font-bold font-mono tracking-widest text-slate-500 uppercase block">
+                          Active Simulations & Tools
+                        </span>
+                        
+                        <div className="space-y-2">
+                          {[
+                            {
+                              id: "map",
+                              name: "Interactive Flood Map",
+                              desc: "Set coordinates, custom buffer zones and simulation presets.",
+                              icon: <Globe className="w-4 h-4 shrink-0" />
+                            },
+                            {
+                              id: "metrics",
+                              name: "Exposure & Assets",
+                              desc: "Exposed residents density, structure units, and slope aspect.",
+                              icon: <Building className="w-4 h-4 shrink-0" />
+                            },
+                            {
+                              id: "ai_report",
+                              name: "Generative AI Report",
+                              desc: "Deep RAG-based geological hazards assessments by Gemini LLMs.",
+                              icon: <Sparkles className="w-4 h-4 shrink-0" />
+                            },
+                            {
+                              id: "action_plan",
+                              name: "Action Plan & Citations",
+                              desc: "Safety mitigation protocols and official scientific sources.",
+                              icon: <ClipboardList className="w-4 h-4 shrink-0" />
+                            },
+                            {
+                              id: "safe_havens",
+                              name: "Emergency Safe Havens",
+                              desc: "Calculate closest high-altitude sanctuaries and contact numbers.",
+                              icon: <ShieldAlert className="w-4 h-4 shrink-0" />
+                            },
+                            {
+                              id: "escape_route",
+                              name: "Escape Route Profile",
+                              desc: "Walking path cross-sections, walk times and hazard crossings.",
+                              icon: <Compass className="w-4 h-4 shrink-0" />
+                            },
+                            {
+                              id: "historical_timeline",
+                              name: "Historical Inundations",
+                              desc: "Recorded multi-decade flood inundation cycles of Accra.",
+                              icon: <Layers className="w-4 h-4 shrink-0" />
+                            }
+                          ].map((item) => {
+                            const isSelected = activeScreen === item.id;
+                            return (
+                              <button
+                                key={item.id}
+                                onClick={() => {
+                                  setActiveScreen(item.id);
+                                  setIsMenuOpen(false);
+                                }}
+                                className={`w-full text-left p-3 rounded-xl border transition-all flex items-start gap-3 cursor-pointer group ${
+                                  isSelected
+                                    ? `bg-indigo-950/30 border-indigo-500/30 text-white`
+                                    : "bg-slate-900/30 border-slate-900 hover:bg-slate-900/60 hover:border-slate-800 text-slate-300 hover:text-white"
+                                }`}
+                              >
+                                <div className={`p-1.5 rounded-lg border shrink-0 mt-0.5 ${
+                                  isSelected ? "bg-indigo-500/20 border-indigo-500/30 text-indigo-400" : "bg-slate-950/50 border-slate-800 text-slate-400 group-hover:text-slate-200"
+                                }`}>
+                                  {item.icon}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-semibold font-display tracking-tight block">
+                                      {item.name}
+                                    </span>
+                                    {isSelected && (
+                                      <span className="text-[8px] bg-indigo-500 text-white font-bold px-1.5 py-0.2 rounded uppercase font-mono tracking-wider">
+                                        Active
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] text-slate-400 group-hover:text-slate-300 leading-normal block mt-1">
+                                    {item.desc}
+                                  </span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Section 2: SYSTEM GUIDES */}
+                      <div className="space-y-3 pt-4 border-t border-slate-900">
+                        <span className="text-[9px] font-bold font-mono tracking-widest text-slate-500 uppercase block">
+                          System Actions & Info
+                        </span>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => {
+                              setIsGuideOpen(true);
+                              setIsMenuOpen(false);
+                              setGuideStep(1);
+                            }}
+                            className="text-left px-3 py-2.5 bg-slate-900/40 hover:bg-slate-900 hover:text-white border border-slate-900 hover:border-slate-800 text-slate-300 text-xs rounded-lg transition-all flex items-center gap-2 cursor-pointer font-sans font-semibold"
+                          >
+                            <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
+                            Walkthrough Guide
+                          </button>
+                          
+                          <button
+                            onClick={() => {
+                              toggleTheme();
+                              setIsMenuOpen(false);
+                            }}
+                            className="text-left px-3 py-2.5 bg-slate-900/40 hover:bg-slate-900 hover:text-white border border-slate-900 hover:border-slate-800 text-slate-300 text-xs rounded-lg transition-all flex items-center gap-2 cursor-pointer font-sans font-semibold"
+                          >
+                            <Palette className="w-3.5 h-3.5 text-indigo-400" />
+                            Cycle Theme ({theme})
+                          </button>
+                        </div>
+                      </div>
+
                     </div>
-                    <div className="px-3 py-1 text-xs text-slate-300 font-bold flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
-                      GHANA HYDRO v1.0
+
+                    {/* Drawer Footer */}
+                    <div className="p-5 border-t border-slate-900 bg-slate-950">
+                      <div className="p-3 bg-slate-900/60 border border-slate-850 rounded-xl space-y-1">
+                        <span className="text-[8.5px] font-bold font-mono tracking-wider text-slate-500 uppercase block">
+                          📞 National Rescue Hotline
+                        </span>
+                        <span className="text-xs font-bold text-rose-400 font-mono block">
+                          NADMO 24/7 Helpline: 0299 350030
+                        </span>
+                        <span className="text-[9px] text-slate-400 leading-relaxed block font-sans">
+                          In case of active flooding, call emergency services immediately.
+                        </span>
+                      </div>
                     </div>
-                    <div className="my-1.5 border-t border-slate-900" />
-                    <button
-                      onClick={() => {
-                        setIsGuideOpen(true);
-                        setIsMenuOpen(false);
-                        setGuideStep(1);
-                      }}
-                      className="w-full text-left px-3 py-2 text-xs text-slate-300 hover:text-white hover:bg-slate-900 rounded-lg transition-all flex items-center gap-2"
-                    >
-                      <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
-                      How to Use Guide
-                    </button>
-                    <div className="my-1.5 border-t border-slate-900" />
-                    <div className="px-3 py-1.5 text-[9px] text-slate-500 leading-normal font-sans">
-                      Geospatial calculations and structural estimators are processed client-side with full-stack pipeline integration.
-                    </div>
+
                   </div>
                 </>
               )}
@@ -386,69 +575,128 @@ export default function App() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* ==================== LEFT CONTROL COLUMN ==================== */}
-          <div className="lg:col-span-4">
-            <ControlPanel
-              inputMode={inputMode}
-              setInputMode={setInputMode}
-              latInput={latInput}
-              setLatInput={setLatInput}
-              lngInput={lngInput}
-              setLngInput={setLngInput}
-              easting={utmEasting}
-              setEasting={setUtmEasting}
-              northing={utmNorthing}
-              setNorthing={setUtmNorthing}
-              bufferRadius={bufferRadius}
-              setBufferRadius={setBufferRadius}
-              isLoading={isLoading}
-              tc={tc}
-              onPresetSelect={handlePresetSelect}
-              onUTMConvertAndAnalyze={handleUTMProjection}
-              onWGSAnalyze={executePipeline}
-              selectedScenarioId={selectedScenarioId}
-              onScenarioChange={handleScenarioChange}
-            />
-          </div>
-
-
-          {/* ==================== CENTER & RIGHT VISUALIZER ==================== */}
-          <div className="lg:col-span-8 flex flex-col gap-6">
+        {activeScreen === "map" ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            {/* 🗺️ Big Interactive Geographic Mapping Canvas */}
-            <div className="h-[400px]">
-              <MapView
-                latitude={latitude}
-                longitude={longitude}
-                bufferRadiusMeters={bufferRadius}
-                stats={stats}
-                onMapClick={handleMapClick}
+            {/* ==================== LEFT CONTROL COLUMN ==================== */}
+            <div className="lg:col-span-4">
+              <ControlPanel
+                inputMode={inputMode}
+                setInputMode={setInputMode}
+                latInput={latInput}
+                setLatInput={setLatInput}
+                lngInput={lngInput}
+                setLngInput={setLngInput}
+                easting={utmEasting}
+                setEasting={setUtmEasting}
+                northing={utmNorthing}
+                setNorthing={setUtmNorthing}
+                bufferRadius={bufferRadius}
+                setBufferRadius={setBufferRadius}
+                isLoading={isLoading}
+                tc={tc}
+                onPresetSelect={handlePresetSelect}
+                onUTMConvertAndAnalyze={handleUTMProjection}
+                onWGSAnalyze={executePipeline}
+                selectedScenarioId={selectedScenarioId}
+                onScenarioChange={handleScenarioChange}
               />
             </div>
 
-            {errorMsg && (
-              <div className="p-4 rounded-lg bg-red-950/50 border border-red-800 text-xs text-red-200">
-                ⚠️ <b>Execution warning:</b> {errorMsg}
-              </div>
-            )}
 
-            {/* ================= STATE RESULTS DISPLAY ================= */}
-            <ResultsDisplay
-              stats={stats}
-              aiData={aiData}
-              isLoading={isLoading}
-              tc={tc}
-              riskStyle={riskStyle}
-              checkedRecommendations={checkedRecommendations}
-              toggleRecommendation={toggleRecommendation}
-              theme={theme}
-            />
+            {/* ==================== CENTER & RIGHT VISUALIZER ==================== */}
+            <div className="lg:col-span-8 flex flex-col gap-6">
+              
+              {/* 🗺️ Big Interactive Geographic Mapping Canvas */}
+              <div className="h-[400px]">
+                <MapView
+                  latitude={latitude}
+                  longitude={longitude}
+                  bufferRadiusMeters={bufferRadius}
+                  stats={stats}
+                  onMapClick={handleMapClick}
+                  activeEscapeRoute={activeEscapeRoute}
+                />
+              </div>
+
+              {errorMsg && (
+                <div className="p-4 rounded-lg bg-red-950/50 border border-red-800 text-xs text-red-200">
+                  ⚠️ <b>Execution warning:</b> {errorMsg}
+                </div>
+              )}
+
+              {/* ================= STATE RESULTS DISPLAY ================= */}
+              <ResultsDisplay
+                stats={stats}
+                aiData={aiData}
+                isLoading={isLoading}
+                tc={tc}
+                riskStyle={riskStyle}
+                checkedRecommendations={checkedRecommendations}
+                toggleRecommendation={toggleRecommendation}
+                theme={theme}
+                selectedHavenId={selectedHavenId}
+                setSelectedHavenId={setSelectedHavenId}
+                activeEscapeRoute={activeEscapeRoute}
+                isRouteLoading={isRouteLoading}
+                activeScreen={activeScreen}
+                setActiveScreen={setActiveScreen}
+                onlyShowBanner={true}
+              />
+
+            </div>
 
           </div>
+        ) : (
+          <div className="space-y-6">
+            {/* 🔙 Beautiful Screen Header Navigation Bar */}
+            <div className="flex items-center justify-between p-4 rounded-xl border border-slate-800/85 bg-slate-900/60 shadow-lg">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setActiveScreen("map")}
+                  className="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-750 font-semibold text-xs transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Return to Map</span>
+                </button>
+                <div className="h-4 w-px bg-slate-800" />
+                <div>
+                  <span className="text-[10px] font-bold font-mono tracking-widest text-indigo-400 uppercase">
+                    Focused Analytical Screen
+                  </span>
+                  <h2 className="text-sm font-black font-display tracking-tight text-white capitalize">
+                    {activeScreen.replace("_", " ")} View
+                  </h2>
+                </div>
+              </div>
+              <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400 font-mono bg-slate-950/40 px-3 py-1.5 rounded-lg border border-slate-850">
+                <span>COORD:</span>
+                <span className="text-indigo-400 font-bold">{latitude.toFixed(4)}, {longitude.toFixed(4)}</span>
+              </div>
+            </div>
 
-        </div>
+            {/* Large full-width results display of focused feature */}
+            <div className="p-1 rounded-xl bg-slate-950/10 border border-slate-900/20">
+              <ResultsDisplay
+                stats={stats}
+                aiData={aiData}
+                isLoading={isLoading}
+                tc={tc}
+                riskStyle={riskStyle}
+                checkedRecommendations={checkedRecommendations}
+                toggleRecommendation={toggleRecommendation}
+                theme={theme}
+                selectedHavenId={selectedHavenId}
+                setSelectedHavenId={setSelectedHavenId}
+                activeEscapeRoute={activeEscapeRoute}
+                isRouteLoading={isRouteLoading}
+                activeScreen={activeScreen}
+                setActiveScreen={setActiveScreen}
+                onlyShowBanner={false}
+              />
+            </div>
+          </div>
+        )}
       </main>
 
       {/* 📘 Interactive Step-by-Step Walkthrough Assessment Guide Modal */}
