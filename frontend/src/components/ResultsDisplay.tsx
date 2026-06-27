@@ -18,6 +18,7 @@ import { GeospatialStats, RiskAnalysisAiResponse } from "../types";
 import SafeHavens from "./SafeHavens";
 import TimelineChart from "./TimelineChart";
 import EscapeRoute from "./EscapeRoute";
+import MapView from "./MapView";
 import { generateDisasterBulletinPdf } from "../utils/pdfGenerator";
 
 interface ResultsDisplayProps {
@@ -840,52 +841,142 @@ export default function ResultsDisplay({
 
         {/* ================== TAB: ESCAPE ROUTE PROFILE ================== */}
         {activeTab === "escape_route" && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <div className={`${tc.cardBg} border border-slate-800/85 rounded-xl p-6 shadow-lg`}>
-              <div className="flex items-center justify-between mb-4 border-b border-slate-900 pb-4">
-                <h3 className="text-sm font-bold font-display uppercase tracking-wider text-slate-200 flex items-center gap-2">
-                  <Compass className={`w-4 h-4 ${tc.textAccent}`} />
-                  Escape Route Elevation Mapper
-                </h3>
-                <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded border border-indigo-500/20 text-indigo-400 bg-indigo-500/10`}>
-                  Active Evacuation Path
-                </span>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in duration-200">
+            {/* LEFT COLUMN: Map View + Safe Havens Directory List */}
+            <div className="lg:col-span-5 space-y-4 flex flex-col">
+              {/* Map view container */}
+              <div className={`${tc.cardBg} border border-slate-800/85 rounded-xl p-4 shadow-lg`}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-bold font-mono tracking-widest text-indigo-400 uppercase">
+                    🗺️ EVACUATION ROUTE MAP
+                  </span>
+                  <span className="text-[9.5px] text-slate-400 font-mono bg-slate-950/40 px-2 py-0.5 rounded border border-slate-850">
+                    Targeted Path
+                  </span>
+                </div>
+                <div className="h-[260px] rounded-lg overflow-hidden border border-slate-900 shadow-inner relative">
+                  {stats ? (
+                    <MapView
+                      latitude={stats.latitude}
+                      longitude={stats.longitude}
+                      bufferRadiusMeters={stats.bufferRadiusKm * 1000}
+                      stats={stats}
+                      onMapClick={() => {}}
+                      activeEscapeRoute={activeEscapeRoute}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-slate-950/60 flex items-center justify-center text-slate-500 font-mono text-xs">
+                      Awaiting coordinates telemetry...
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Dedicate full-width to the EscapeRoute component */}
+              {/* Safe Havens List */}
+              <div className={`${tc.cardBg} border border-slate-800/85 rounded-xl p-4 shadow-lg flex-1 flex flex-col`}>
+                <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-900">
+                  <h4 className="text-xs font-bold font-display uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    🏥 Recommended Safe Havens
+                  </h4>
+                  <span className="text-[9px] text-slate-500 font-mono">Select target to map route</span>
+                </div>
+
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                  {stats?.safeHavens && stats.safeHavens.length > 0 ? (
+                    stats.safeHavens.map((haven, idx) => {
+                      const isSelected = selectedHavenId === haven.id;
+                      return (
+                        <div
+                          key={haven.id}
+                          onClick={() => setSelectedHavenId(haven.id)}
+                          className={`p-3 rounded-xl border transition-all cursor-pointer text-left ${
+                            isSelected
+                              ? "bg-indigo-950/20 border-indigo-500 shadow-indigo-950/40 shadow"
+                              : "bg-slate-950/40 border-slate-900 hover:border-slate-800"
+                          }`}
+                        >
+                          <div className="flex justify-between items-start gap-2">
+                            <div>
+                              <span className="text-[11px] font-bold text-slate-200 block">
+                                {idx + 1}. {haven.name}
+                              </span>
+                              <span className="text-[9.5px] text-slate-400 font-mono block mt-1">
+                                {haven.type} • Cap: {haven.capacity.toLocaleString()}
+                              </span>
+                            </div>
+                            <span className={`text-[10px] font-black font-mono px-1.5 py-0.5 rounded ${
+                              isSelected ? "bg-indigo-500 text-white" : "bg-slate-800 text-slate-300"
+                            } shrink-0`}>
+                              {haven.distanceKm} km
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center text-slate-500 text-xs italic py-8">
+                      No safe havens computed yet. Please select coordinates on the map.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN: Elevation Profile Chart + Warnings + Rescue Details */}
+            <div className="lg:col-span-7 space-y-4">
               <EscapeRoute 
                 route={activeEscapeRoute} 
                 isLoading={isRouteLoading} 
                 tc={tc} 
                 theme={theme} 
               />
-            </div>
 
-            {/* 🔗 Interactive Next Screen Navigation Alert */}
-            <div className="p-4 bg-indigo-950/20 border border-indigo-900/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <span className="text-xs font-bold text-indigo-400 font-display uppercase tracking-wider block">
-                  👉 Evacuation Profile Plotted!
+              {/* NADMO Emergency Hotline details at the bottom of the right column */}
+              <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+                <span className="text-[10px] font-bold font-mono tracking-wider text-indigo-400 uppercase block">
+                  📞 National Rescue Hotline & Support
                 </span>
-                <span className="text-[11px] text-slate-300 leading-relaxed mt-1 block font-sans">
-                  Concerned about multi-decade riverine flood histories in this exact sector? Open the Historical Flooding Timeline to review major flood events in Ghana.
-                </span>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-1">
+                  <div>
+                    <span className="text-sm font-black text-rose-400 font-mono block">
+                      Emergency Line: 193 / 112
+                    </span>
+                    <span className="text-xs font-bold text-slate-300 font-mono block mt-0.5">
+                      NADMO HQ: 0299 350030
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 leading-relaxed max-w-xs font-sans block sm:text-right">
+                    In case of active flooding, call the emergency line or contact local NADMO offices immediately.
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
-                <button
-                  onClick={() => setActiveScreen("map")}
-                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700 text-slate-300 font-bold text-xs rounded-lg shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Return to Map</span>
-                </button>
-                <button
-                  onClick={() => setActiveScreen("historical_timeline")}
-                  className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <span>Open Historical Timeline</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+
+              {/* 🔗 Interactive Next Screen Navigation Alert */}
+              <div className="p-4 bg-indigo-950/20 border border-indigo-900/30 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <span className="text-xs font-bold text-indigo-400 font-display uppercase tracking-wider block">
+                    👉 Evacuation Profile Plotted!
+                  </span>
+                  <span className="text-[11px] text-slate-300 leading-relaxed mt-1 block font-sans">
+                    Concerned about multi-decade riverine flood histories in this exact sector? Open the Historical Flooding Timeline to review major flood events in Ghana.
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setActiveScreen("map")}
+                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700 text-slate-300 font-bold text-xs rounded-lg shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Return to Map</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveScreen("historical_timeline")}
+                    className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <span>Open Historical Timeline</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>

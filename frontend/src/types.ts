@@ -57,6 +57,7 @@ export interface GeospatialStats {
 export interface SafeHaven {
   id: string;
   name: string;
+  district: string;
   lat: number;
   lng: number;
   type: string;
@@ -64,6 +65,7 @@ export interface SafeHaven {
   region: string;
   contact: string;
   evacuationRoutes: string[];
+  elevation?: number;
 }
 
 export interface SafeHavenWithDistance extends SafeHaven {
