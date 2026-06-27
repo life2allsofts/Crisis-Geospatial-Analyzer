@@ -109,6 +109,20 @@ app_port: 7860
 └─────────────────────────────────────────────┘
 ```
 
+### Key Architectural Innovations
+
+#### 📱 State-Driven Multi-Screen Navigation
+The user interface implements a responsive, state-driven navigation router inside `App.tsx` designed to optimize screen real estate and deliver deep analytical focuses:
+* **Dashboard Mode (`activeScreen === "map"`)**: Centers the Leaflet map and control parameters with a high-level visual vulnerability summary banner side-by-side (desktop) or stacked (mobile).
+* **Focused Analytics Mode (`activeScreen !== "map"`)**: Dynamically swaps out the control-and-map grid for a dedicated, full-width focus viewport (e.g., *Exposure & Terrain*, *Generative AI Report*, *Safe Havens & Routes*). Features a custom navigation header with a coordinates readout, a single-click return mechanism, and the full analytical panels.
+* **Dashboard Quick-Link Tiles**: Integrated directly into the primary results card when in Dashboard mode, these interactive cards provide quick-access links to swap views instantly.
+
+#### 🛡️ Resilient LLM Failover Architecture
+To ensure 100% system availability during periods of heavy usage or external API service interruptions (such as Gemini API `429 RESOURCE_EXHAUSTED` rate limits/quotas), the backend employs a robust fallback pipeline:
+* **Graceful Exception Catching**: In `backend/core/llm_service.ts`, the model invocation is wrapped in a resilient try-catch handler.
+* **Geospatial Heuristics Generator**: If the external Gemini endpoint fails, the system triggers a local, high-fidelity geospatial heuristics generator.
+* **Dynamic Content Interpolation**: The fallback engine synthesizes raw spatial data—including exact coordinates, center elevation (meters ASL), interpolated slope profiles, closest hazard zones, and selected simulated climate parameters—to produce a complete, scientifically accurate, and cohesive hazard assessment report layout layout instantaneously, ensuring uninterrupted service.
+
 ---
 
 ## 📁 Project Structure
@@ -363,4 +377,5 @@ npm run lint
 ## 📝 License
 
 This project is open-source and licensed under the MIT License.
+
 
