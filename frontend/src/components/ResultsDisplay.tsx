@@ -11,11 +11,13 @@ import {
   Sparkles,
   ClipboardList,
   Layers,
-  Compass
+  Compass,
+  ArrowLeft
 } from "lucide-react";
 import { GeospatialStats, RiskAnalysisAiResponse } from "../types";
 import SafeHavens from "./SafeHavens";
 import TimelineChart from "./TimelineChart";
+import EscapeRoute from "./EscapeRoute";
 import { generateDisasterBulletinPdf } from "../utils/pdfGenerator";
 
 interface ResultsDisplayProps {
@@ -34,51 +36,6 @@ interface ResultsDisplayProps {
   activeScreen: string;
   setActiveScreen: (screen: any) => void;
   onlyShowBanner?: boolean;
-}
-
-interface EscapeRouteProps {
-  route: any | null;
-  isLoading: boolean;
-  tc: any;
-  theme: string;
-}
-
-function EscapeRoute({ route, isLoading, tc, theme }: EscapeRouteProps) {
-  if (isLoading) {
-    return (
-      <div className="py-16 bg-slate-950/30 border border-slate-900 rounded-lg text-center text-slate-400 text-[11px] italic font-sans flex flex-col justify-center items-center gap-2">
-        <RefreshCw className={`w-6 h-6 animate-spin ${tc.textAccent}`} />
-        <span>Routing data is being generated. Please wait...</span>
-      </div>
-    );
-  }
-
-  if (!route) {
-    return (
-      <div className="py-16 bg-slate-950/30 border border-slate-900 rounded-lg text-center text-slate-400 text-[11px] italic font-sans">
-        No active escape route is currently loaded. Select a safe haven to generate the evacuation path.
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="text-sm font-semibold text-slate-200">Escape Route Overview</div>
-      <div className="text-[11px] text-slate-300 leading-relaxed">
-        {route.summary || "Detailed escape route data is available for the selected haven."}
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[10px] text-slate-400">
-        <div className="p-3 rounded-lg bg-slate-950/40 border border-slate-900/60">
-          <div className="font-semibold text-slate-200">Distance</div>
-          <div>{route.distanceKm ? `${route.distanceKm.toFixed(1)} km` : "N/A"}</div>
-        </div>
-        <div className="p-3 rounded-lg bg-slate-950/40 border border-slate-900/60">
-          <div className="font-semibold text-slate-200">Estimated Time</div>
-          <div>{route.estimatedTime || "N/A"}</div>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export default function ResultsDisplay({
@@ -153,7 +110,8 @@ export default function ResultsDisplay({
       {onlyShowBanner ? (
         <div className="space-y-4">
           {stats && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mt-2">
+              {/* 1. Exposure & Assets */}
               <div 
                 onClick={() => setActiveScreen && setActiveScreen("metrics")}
                 className="p-4 bg-slate-950/40 hover:bg-slate-900/60 border border-slate-800/85 hover:border-indigo-500/40 rounded-xl transition-all cursor-pointer group shadow-lg flex flex-col justify-between min-h-[120px]"
@@ -161,7 +119,7 @@ export default function ResultsDisplay({
                 <div>
                   <h4 className="text-xs font-bold text-slate-200 font-display flex items-center gap-1.5 uppercase tracking-wide">
                     <span className="text-base">🏘️</span>
-                    Exposure & Terrain
+                    Exposure & Assets
                   </h4>
                   <p className="text-[10.5px] text-slate-400 mt-2 leading-normal font-sans">
                     View estimated exposed residents, OSM building footprints, affected roads, and terrain aspect profiles.
@@ -172,6 +130,7 @@ export default function ResultsDisplay({
                 </span>
               </div>
 
+              {/* 2. Generative AI Report */}
               <div 
                 onClick={() => setActiveScreen && setActiveScreen("ai_report")}
                 className="p-4 bg-slate-950/40 hover:bg-slate-900/60 border border-slate-800/85 hover:border-indigo-500/40 rounded-xl transition-all cursor-pointer group shadow-lg flex flex-col justify-between min-h-[120px]"
@@ -190,17 +149,56 @@ export default function ResultsDisplay({
                 </span>
               </div>
 
+              {/* 3. Action Plan & Sources */}
+              <div 
+                onClick={() => setActiveScreen && setActiveScreen("action_plan")}
+                className="p-4 bg-slate-950/40 hover:bg-slate-900/60 border border-slate-800/85 hover:border-indigo-500/40 rounded-xl transition-all cursor-pointer group shadow-lg flex flex-col justify-between min-h-[120px]"
+              >
+                <div>
+                  <h4 className="text-xs font-bold text-slate-200 font-display flex items-center gap-1.5 uppercase tracking-wide">
+                    <span className="text-base">📋</span>
+                    Action Plan & Sources
+                  </h4>
+                  <p className="text-[10.5px] text-slate-400 mt-2 leading-normal font-sans">
+                    Formulate active safety checklists, risk mitigation steps, and official scientific sources.
+                  </p>
+                </div>
+                <span className={`text-[10px] font-bold font-mono mt-3 inline-flex items-center gap-1 ${tc.textAccent} group-hover:underline`}>
+                  Open Screen →
+                </span>
+              </div>
+
+              {/* 4. Safe Havens & NADMO */}
               <div 
                 onClick={() => setActiveScreen && setActiveScreen("safe_havens")}
-                className="p-4 bg-slate-950/40 hover:bg-slate-900/60 border border-slate-800/85 hover:border-indigo-500/40 rounded-xl transition-all cursor-pointer group shadow-lg flex flex-col justify-between min-h-[120px] sm:col-span-2 lg:col-span-1"
+                className="p-4 bg-slate-950/40 hover:bg-slate-900/60 border border-slate-800/85 hover:border-indigo-500/40 rounded-xl transition-all cursor-pointer group shadow-lg flex flex-col justify-between min-h-[120px]"
               >
                 <div>
                   <h4 className="text-xs font-bold text-slate-200 font-display flex items-center gap-1.5 uppercase tracking-wide">
                     <span className="text-base">🏥</span>
-                    Safe Havens & Routes
+                    Safe Havens & NADMO
                   </h4>
                   <p className="text-[10.5px] text-slate-400 mt-2 leading-normal font-sans">
                     Calculate nearest high-elevation NADMO safe havens and plan your custom evacuation routes.
+                  </p>
+                </div>
+                <span className={`text-[10px] font-bold font-mono mt-3 inline-flex items-center gap-1 ${tc.textAccent} group-hover:underline`}>
+                  Open Screen →
+                </span>
+              </div>
+
+              {/* 5. Historical Timeline */}
+              <div 
+                onClick={() => setActiveScreen && setActiveScreen("historical_timeline")}
+                className="p-4 bg-slate-950/40 hover:bg-slate-900/60 border border-slate-800/85 hover:border-indigo-500/40 rounded-xl transition-all cursor-pointer group shadow-lg flex flex-col justify-between min-h-[120px]"
+              >
+                <div>
+                  <h4 className="text-xs font-bold text-slate-200 font-display flex items-center gap-1.5 uppercase tracking-wide">
+                    <span className="text-base">📊</span>
+                    Historical Timeline
+                  </h4>
+                  <p className="text-[10.5px] text-slate-400 mt-2 leading-normal font-sans">
+                    Review Accra's multi-decade historical flood inundation cycles and major event logs.
                   </p>
                 </div>
                 <span className={`text-[10px] font-bold font-mono mt-3 inline-flex items-center gap-1 ${tc.textAccent} group-hover:underline`}>
@@ -582,13 +580,22 @@ export default function ResultsDisplay({
                   To see how these physical metrics translate into a full RAG-based hydrological risk rating and safety comment, click to open the Generative AI Assessment screen.
                 </span>
               </div>
-              <button
-                onClick={() => setActiveScreen("ai_report")}
-                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
-              >
-                <span>Open Generative AI Report</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setActiveScreen("map")}
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700 text-slate-300 font-bold text-xs rounded-lg shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Return to Map</span>
+                </button>
+                <button
+                  onClick={() => setActiveScreen("ai_report")}
+                  className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <span>Open Generative AI Report</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
           </div>
@@ -651,13 +658,22 @@ export default function ResultsDisplay({
                   To formulate and track active safety protocols, checklists, and view official scientific source attributions, open the Action Plan screen.
                 </span>
               </div>
-              <button
-                onClick={() => setActiveScreen("action_plan")}
-                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
-              >
-                <span>Open Action Plan & Sources</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setActiveScreen("map")}
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700 text-slate-300 font-bold text-xs rounded-lg shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Return to Map</span>
+                </button>
+                <button
+                  onClick={() => setActiveScreen("action_plan")}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <span>Open Action Plan & Sources</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
           </div>
@@ -757,13 +773,22 @@ export default function ResultsDisplay({
                   Ready to map a physical escape route to safety? Open the Safe Havens screen to list the closest shelter locations, capacities, and NADMO responder directory.
                 </span>
               </div>
-              <button
-                onClick={() => setActiveScreen("safe_havens")}
-                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
-              >
-                <span>Find Safe Havens</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setActiveScreen("map")}
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700 text-slate-300 font-bold text-xs rounded-lg shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Return to Map</span>
+                </button>
+                <button
+                  onClick={() => setActiveScreen("safe_havens")}
+                  className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <span>Find Safe Havens</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
           </div>
@@ -793,13 +818,22 @@ export default function ResultsDisplay({
                   Ready to map the street-by-street walking path, estimated travel times, and high-precision elevation cross-section? Open the Active Escape Route Mapper screen.
                 </span>
               </div>
-              <button
-                onClick={() => setActiveScreen("escape_route")}
-                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
-              >
-                <span>Open Escape Route Mapper</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setActiveScreen("map")}
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700 text-slate-300 font-bold text-xs rounded-lg shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Return to Map</span>
+                </button>
+                <button
+                  onClick={() => setActiveScreen("escape_route")}
+                  className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <span>Open Escape Route Mapper</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -837,13 +871,22 @@ export default function ResultsDisplay({
                   Concerned about multi-decade riverine flood histories in this exact sector? Open the Historical Flooding Timeline to review major flood events in Ghana.
                 </span>
               </div>
-              <button
-                onClick={() => setActiveScreen("historical_timeline")}
-                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
-              >
-                <span>Open Historical Timeline</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setActiveScreen("map")}
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700 text-slate-300 font-bold text-xs rounded-lg shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Return to Map</span>
+                </button>
+                <button
+                  onClick={() => setActiveScreen("historical_timeline")}
+                  className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <span>Open Historical Timeline</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         )}
