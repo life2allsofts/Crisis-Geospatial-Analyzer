@@ -565,7 +565,7 @@ export default function ResultsDisplay({
                 </div>
 
                 <div className="text-[10px] text-slate-500 font-mono mt-4 pt-4 border-t border-slate-900/40">
-                  ⚡ Powered by Shuttle Radar Topography Mission (SRTM) 30m Digital Elevation Model.
+                  ⚡ Powered by Ghana Survey and Mapping Division (SMD) Orthometric Heights & SRTM 30m DEM.
                 </div>
               </div>
 
