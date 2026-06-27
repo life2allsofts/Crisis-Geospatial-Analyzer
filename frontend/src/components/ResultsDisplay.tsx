@@ -15,6 +15,7 @@ import {
 import { GeospatialStats, RiskAnalysisAiResponse } from "../types";
 import SafeHavens from "./SafeHavens";
 import TimelineChart from "./TimelineChart";
+import { generateDisasterBulletinPdf } from "../utils/pdfGenerator";
 
 interface ResultsDisplayProps {
   stats: GeospatialStats | null;
@@ -66,12 +67,23 @@ export default function ResultsDisplay({
         </div>
         
         {stats && (
-          <div className="z-10 shrink-0 bg-slate-950/80 border border-slate-800/80 rounded-lg px-4 py-3 flex flex-col items-center justify-center text-center font-mono min-w-[120px]">
-            <span className="text-[9px] text-slate-400 uppercase">Zonal Proximity</span>
-            <span className={`text-sm font-black mt-0.5 ${riskStyle.text}`}>
-              {stats.distanceToNearestZoneKm.toFixed(2)} km
-            </span>
-            <span className="text-[8px] text-slate-500 mt-0.5">to closest watershed</span>
+          <div className="z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="shrink-0 bg-slate-950/80 border border-slate-800/80 rounded-lg px-4 py-3 flex flex-col items-center justify-center text-center font-mono min-w-[120px]">
+              <span className="text-[9px] text-slate-400 uppercase">Zonal Proximity</span>
+              <span className={`text-sm font-black mt-0.5 ${riskStyle.text}`}>
+                {stats.distanceToNearestZoneKm.toFixed(2)} km
+              </span>
+              <span className="text-[8px] text-slate-500 mt-0.5">to closest watershed</span>
+            </div>
+
+            <button
+              onClick={() => generateDisasterBulletinPdf(stats, aiData)}
+              className="px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] font-sans shrink-0 border border-indigo-500/30 cursor-pointer"
+              title="Export high-fidelity civil protection report for the current coordinate selection"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Download NADMO Bulletin (PDF)</span>
+            </button>
           </div>
         )}
         

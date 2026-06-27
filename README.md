@@ -187,6 +187,7 @@ app_port: 7860
 | **`frontend/src/components/ResultsDisplay.tsx`** | Consolidates and renders output results. Houses metrics counters, structural metrics checklists, and collapsible checkboxes for evacuation recommendations. Supports 5 interactive tabs including Live Safe Havens and Historical Timelines. |
 | **`frontend/src/components/SafeHavens.tsx`** | High-fidelity safe haven metrics cards listing details and interactive NADMO Regional Emergency Hotline directory lookup. |
 | **`frontend/src/components/TimelineChart.tsx`** | Interactive historical trend visualizer utilizing Recharts to render displacement curves and fatalities over a 2015-2025 temporal scale. |
+| **`frontend/src/utils/pdfGenerator.tsx`** | Client-side publication-quality PDF compiler utilizing `@react-pdf/renderer`. Houses formatted NADMO-branded heading styles, tables, and declarative multi-page layout configurations. |
 | **`frontend/src/utils/geoUtils.ts`** | Conducts standard mathematical conversion from UTM Zone 30N (Ghana National Grid UTM format) to generic lat/lng decimals. |
 | **`frontend/src/utils/apiClient.ts`** | Client interface wrapper that performs standardized network HTTP fetches to backend route paths. |
 
@@ -344,6 +345,10 @@ The application combines raw geographic calculation with generative text analysi
    - Hover over the combined Bar and Line Chart (powered by **Recharts**) to explore relative displacement counts alongside verified fatalities.
    - Browse the **Historic Catastrophe Log Registry** cards below the chart and select specific events to load their full dossier (including localized triggers, structural damage, and official sources).
 
+8. **Generate Official Disaster Bulletin (PDF)**:
+   - Click the prominent **Download NADMO Bulletin (PDF)** button located inside the primary threat indicator panel.
+   - A multi-page high-fidelity PDF is generated directly client-side. The document includes official Republic of Ghana headers, unique serial numbers, location geolocations, elevation profiles, exposure statistics matrices, generative AI hazard breakdowns, certified sanctuary locations with routing instructions, and direct regional dispatcher contact directories.
+
 ---
 
 ## 🧪 Testing
@@ -358,3 +363,4 @@ npm run lint
 ## 📝 License
 
 This project is open-source and licensed under the MIT License.
+
