@@ -67,7 +67,7 @@ export default function DeveloperDrawer({
                   Civil Defense System
                 </h3>
                 <span className={`text-[9px] font-mono px-2 py-0.5 rounded font-bold ${tc.badgeBg}`}>
-                  v2.4.1
+                  v2.4.2
                 </span>
               </div>
               <p className={`text-[10px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} font-sans`}>

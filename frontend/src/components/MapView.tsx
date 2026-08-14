@@ -241,8 +241,8 @@ export default function MapView({
         </div>`
       );
 
-    // 6. Draw escape route if present
-    if (activeEscapeRoute && activeEscapeRoute.profilePoints && activeEscapeRoute.profilePoints.length > 1) {
+    // 6. Draw escape route if present AND showSafeHavens is toggled ON
+    if (showSafeHavens && activeEscapeRoute && activeEscapeRoute.profilePoints && activeEscapeRoute.profilePoints.length > 1) {
       const points = activeEscapeRoute.profilePoints.map((p: any) => [p.lat, p.lng]);
       const group = L.layerGroup().addTo(map);
       activeEscapeRouteLineRef.current = group;
@@ -378,8 +378,20 @@ export default function MapView({
     setLegendOpen(!legendOpen);
   };
 
+  // Responsive map resizing
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    });
+    resizeObserver.observe(mapContainerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+
   return (
-    <div className="relative w-full h-[320px] md:h-full min-h-[300px] border border-slate-700 rounded-xl overflow-hidden shadow-2xl bg-slate-950">
+    <div className="relative w-full h-full min-h-[350px] border-0 rounded-none overflow-hidden bg-slate-950">
       <div ref={mapContainerRef} className="w-full h-full" id="geospatial-visualizer-canvas" />
       
       {/* ===== BOTTOM RIGHT HAZARD LEGEND (Compact, crisp, z-[400] to prevent ghosting) ===== */}

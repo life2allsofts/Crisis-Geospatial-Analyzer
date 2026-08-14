@@ -401,11 +401,11 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen ${tc.bg} font-sans pb-16 transition-colors duration-300`}>
+    <div className={`h-screen flex flex-col ${tc.bg} font-sans transition-colors duration-300 overflow-hidden`}>
       
-      {/* 🚀 COMPACT & CUTE TOP HEADER (Not too wide, with Dual Corner Hamburger Menus & Custom Logo) */}
-      <header className={`border-b ${tc.navBg} backdrop-blur-md sticky top-0 z-40 transition-colors duration-300`}>
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-2">
+      {/* 🚀 COMPACT & CUTE TOP HEADER (Dual Corner Hamburger Menus & Custom Logo) */}
+      <header className={`border-b ${tc.navBg} shrink-0 sticky top-0 z-40 transition-colors duration-300 w-full`}>
+        <div className="w-full px-3 sm:px-6 py-2 flex items-center justify-between gap-2">
           
           {/* LEFT CORNER: Left Hamburger Menu (Tools, Presets, Controls) & Brand */}
           <div className="flex items-center gap-2.5 sm:gap-3">
@@ -435,7 +435,7 @@ export default function App() {
                   <h1 className="text-xs sm:text-sm font-black font-display tracking-tight text-white flex items-center gap-1.5 truncate">
                     <span className={isDarkMode ? "text-white" : "text-slate-900"}>CRISIS GEOSPATIAL</span>
                     <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded font-bold ${tc.badgeBg}`}>
-                      GHANA v2.4.1
+                      GHANA v2.4.2
                     </span>
                   </h1>
                 </div>
@@ -523,7 +523,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* 🧭 NAVIGATION MENU BAR DIRECTLY UNDER HEADER (Declutters main screen completely) */}
+      {/* 🧭 NAVIGATION MENU BAR DIRECTLY UNDER HEADER WITH 0 SPACE */}
       <NavigationMenuBar
         activeScreen={activeScreen}
         setActiveScreen={setActiveScreen}
@@ -534,78 +534,48 @@ export default function App() {
         onPresetSelect={handlePresetSelect}
         mapStyle={mapStyle}
         onMapStyleChange={setMapStyle}
+        onOpenToolsDrawer={() => setIsLeftDrawerOpen(true)}
         tc={tc}
         isDarkMode={isDarkMode}
         stats={stats}
       />
 
-      {/* 📱 MAIN WORKSPACE VIEW (Clean, uncluttered, map visible at all times) */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-4">
-        {activeScreen === "map" ? (
-          <div className="space-y-4">
-            
-            {/* Map Visualizer & Live Telemetry Controls Container */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-              
-              {/* PRIMARY VISUALIZER: High-Resolution Leaflet Map */}
-              <div className="lg:col-span-12">
-                <div className="h-[460px] w-full rounded-2xl overflow-hidden shadow-2xl border border-slate-800/80 relative">
-                  <MapView
-                    latitude={latitude}
-                    longitude={longitude}
-                    bufferRadiusMeters={bufferRadius}
-                    stats={stats}
-                    onMapClick={handleMapClick}
-                    activeEscapeRoute={activeEscapeRoute}
-                    showSafeHavens={showSafeHavens}
-                    mapStyle={mapStyle}
-                    onMapStyleChange={setMapStyle}
-                    onSelectSafeHaven={(havenId) => {
-                      setSelectedHavenId(havenId);
-                      setActiveScreen("escape_route");
-                    }}
-                  />
-                </div>
-              </div>
+      {/* 📱 MAIN WORKSPACE VIEW (Fill whole window, zero margin/padding on left, right, or below the map) */}
+      {activeScreen === "map" ? (
+        <main className="flex-1 w-full h-full p-0 m-0 relative overflow-hidden">
+          <MapView
+            latitude={latitude}
+            longitude={longitude}
+            bufferRadiusMeters={bufferRadius}
+            stats={stats}
+            onMapClick={handleMapClick}
+            activeEscapeRoute={activeEscapeRoute}
+            showSafeHavens={showSafeHavens}
+            mapStyle={mapStyle}
+            onMapStyleChange={setMapStyle}
+            onSelectSafeHaven={(havenId) => {
+              setSelectedHavenId(havenId);
+              setActiveScreen("escape_route");
+            }}
+          />
 
+          {/* Floating Execution Warning Alert if any */}
+          {errorMsg && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[500] max-w-lg w-[90%] p-3 rounded-xl bg-red-950/90 border border-red-800 text-xs text-red-200 flex items-center justify-between shadow-2xl backdrop-blur-md">
+              <div>⚠️ <b>Execution warning:</b> {errorMsg}</div>
+              <button 
+                onClick={() => setErrorMsg(null)}
+                className="px-2 py-0.5 rounded bg-red-900/80 text-red-100 hover:bg-red-800 text-[10px] cursor-pointer"
+              >
+                Dismiss
+              </button>
             </div>
-
-            {/* Execution warning alert if any */}
-            {errorMsg && (
-              <div className="p-3.5 rounded-xl bg-red-950/60 border border-red-800 text-xs text-red-200 flex items-center justify-between">
-                <div>⚠️ <b>Execution warning:</b> {errorMsg}</div>
-                <button 
-                  onClick={() => setErrorMsg(null)}
-                  className="px-2 py-0.5 rounded bg-red-900/60 text-red-100 hover:bg-red-800 text-[10px] cursor-pointer"
-                >
-                  Dismiss
-                </button>
-              </div>
-            )}
-
-            {/* Quick Summary Cards & Analytical Jump Points Banner */}
-            <ResultsDisplay
-              stats={stats}
-              aiData={aiData}
-              isLoading={isLoading}
-              tc={tc}
-              riskStyle={riskStyle}
-              checkedRecommendations={checkedRecommendations}
-              toggleRecommendation={toggleRecommendation}
-              theme={theme}
-              selectedHavenId={selectedHavenId}
-              setSelectedHavenId={setSelectedHavenId}
-              activeEscapeRoute={activeEscapeRoute}
-              isRouteLoading={isRouteLoading}
-              activeScreen={activeScreen}
-              setActiveScreen={setActiveScreen}
-              onlyShowBanner={true}
-            />
-
-          </div>
-        ) : (
-          /* FOCUSED ANALYTICAL MODULE VIEWS */
-          <div className="space-y-4">
+          )}
+        </main>
+      ) : (
+        /* FOCUSED ANALYTICAL MODULE VIEWS */
+        <main className="flex-1 w-full overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto space-y-4">
             {/* Sub-Screen Header with Return to Map Button */}
             <div className={`flex items-center justify-between p-3.5 rounded-xl border ${
               isDarkMode ? 'border-slate-800/80 bg-slate-900/70' : 'border-slate-200 bg-white'
@@ -659,8 +629,8 @@ export default function App() {
               onlyShowBanner={false}
             />
           </div>
-        )}
-      </main>
+        </main>
+      )}
 
       {/* 🧭 LEFT HAMBURGER DRAWER: Geospatial Tools, Presets, UTM Converter & Scenarios */}
       <GeospatialToolsDrawer
