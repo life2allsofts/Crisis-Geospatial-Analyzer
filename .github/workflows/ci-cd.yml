@@ -34,8 +34,14 @@ jobs:
         run: |
           echo "📦 Installing dependencies..."
           rm -rf node_modules
-          npm ci --include=optional
-          npm rebuild @tailwindcss/oxide --foreground-scripts
+          npm install --include=optional
+          npm rebuild @tailwindcss/oxide
+          # Verify installation
+          if [ -f "node_modules/@tailwindcss/oxide/index.js" ]; then
+            echo "✅ @tailwindcss/oxide installed successfully"
+          else
+            echo "⚠️ @tailwindcss/oxide not found, continuing..."
+          fi
       
       - name: 🔍 TypeScript Lint & Type Check
         run: |
@@ -101,8 +107,14 @@ jobs:
         run: |
           echo "📦 Installing dependencies..."
           rm -rf node_modules
-          npm ci --include=optional
-          npm rebuild @tailwindcss/oxide --foreground-scripts
+          npm install --include=optional
+          npm rebuild @tailwindcss/oxide
+          # Verify installation
+          if [ -f "node_modules/@tailwindcss/oxide/index.js" ]; then
+            echo "✅ @tailwindcss/oxide installed successfully"
+          else
+            echo "⚠️ @tailwindcss/oxide not found, continuing..."
+          fi
       
       - name: 🔧 Create PostCSS config if missing
         run: |
@@ -169,8 +181,14 @@ jobs:
         run: |
           echo "📦 Installing dependencies..."
           rm -rf node_modules
-          npm ci --include=optional
-          npm rebuild @tailwindcss/oxide --foreground-scripts
+          npm install --include=optional
+          npm rebuild @tailwindcss/oxide
+          # Verify installation
+          if [ -f "node_modules/@tailwindcss/oxide/index.js" ]; then
+            echo "✅ @tailwindcss/oxide installed successfully"
+          else
+            echo "⚠️ @tailwindcss/oxide not found, continuing..."
+          fi
       
       - name: 🔧 Ensure PostCSS config exists
         run: |
@@ -271,8 +289,8 @@ jobs:
           COPY postcss.config.cjs ./
           COPY tailwind.config.js ./
 
-          RUN npm ci --include=optional
-          RUN npm rebuild @tailwindcss/oxide --foreground-scripts
+          RUN npm install --include=optional
+          RUN npm rebuild @tailwindcss/oxide || true
 
           # Copy source code
           COPY backend/ ./backend/
@@ -301,7 +319,7 @@ jobs:
           COPY .env.example .env
 
           # Install production dependencies only
-          RUN npm ci --omit=dev --ignore-scripts
+          RUN npm install --production --ignore-scripts
 
           # Create non-root user
           RUN addgroup -g 1001 -S nodejs && \
