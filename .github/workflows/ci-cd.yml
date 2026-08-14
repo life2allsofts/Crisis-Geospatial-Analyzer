@@ -36,6 +36,7 @@ jobs:
           rm -rf node_modules
           npm ci --include=optional
           npm rebuild @tailwindcss/oxide --foreground-scripts
+          npm run build
       
       - name: 🔍 TypeScript Lint & Type Check
         run: |
