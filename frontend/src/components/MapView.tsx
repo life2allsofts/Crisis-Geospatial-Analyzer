@@ -8,6 +8,8 @@ interface MapViewProps {
   stats: GeospatialStats | null;
   onMapClick: (lat: number, lng: number) => void;
   activeEscapeRoute?: any | null;
+  showSafeHavens?: boolean;
+  onSelectSafeHaven?: (havenId: string) => void;
 }
 
 // Coordinate list of all known floodplains to render reference overlays on startup!
@@ -52,7 +54,9 @@ export default function MapView({
   bufferRadiusMeters,
   stats,
   onMapClick,
-  activeEscapeRoute
+  activeEscapeRoute,
+  showSafeHavens = false,
+  onSelectSafeHaven
 }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -63,6 +67,7 @@ export default function MapView({
   const activeEscapeRouteLineRef = useRef<any>(null);
   const activeEscapeRouteHavenRef = useRef<any>(null);
   const activeEscapeRouteHazardsRef = useRef<any[]>([]);
+  const safeHavenMarkersRef = useRef<any[]>([]);
   const [legendOpen, setLegendOpen] = useState(false);
   const [controlsOpen, setControlsOpen] = useState(false);
   const [mapStyle, setMapStyle] = useState<"dark" | "light" | "satellite" | "streets">("dark");
@@ -296,7 +301,58 @@ export default function MapView({
       map.fitBounds(bounds, { padding: [50, 50] });
     }
 
-  }, [latitude, longitude, bufferRadiusMeters, stats, activeEscapeRoute]);
+    // Clear existing safe haven markers
+    if (safeHavenMarkersRef.current && safeHavenMarkersRef.current.length > 0) {
+      safeHavenMarkersRef.current.forEach((m) => map.removeLayer(m));
+      safeHavenMarkersRef.current = [];
+    }
+
+    // 7. Render Safe Havens if toggled ON
+    if (showSafeHavens && stats?.safeHavens && stats.safeHavens.length > 0) {
+      stats.safeHavens.forEach((haven: any, idx: number) => {
+        const havenHtml = `
+          <div class="relative flex items-center justify-center cursor-pointer group">
+            <span class="absolute inline-flex h-6 w-6 rounded-full bg-emerald-400/30 opacity-75 animate-ping"></span>
+            <span class="relative inline-flex rounded-full h-5 w-5 bg-emerald-600 border-2 border-white shadow-md text-white font-bold text-[9px] items-center justify-center">
+              ${idx + 1}
+            </span>
+          </div>
+        `;
+        const havenIcon = L.divIcon({
+          html: havenHtml,
+          className: "custom-safe-haven-marker",
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+
+        const havenMarker = L.marker([haven.lat, haven.lng], { icon: havenIcon })
+          .addTo(map)
+          .bindPopup(`
+            <div class="text-slate-900 font-sans leading-tight min-w-[160px]">
+              <span class="text-[9px] font-bold font-mono uppercase text-emerald-600 block">🏥 SAFE HAVEN #${idx + 1}</span>
+              <strong class="font-bold text-slate-900 block text-xs mt-0.5">${haven.name}</strong>
+              <div class="text-[10px] text-slate-500 font-mono mt-0.5">${haven.district || ""} • ${haven.region || ""}</div>
+              <div class="mt-1.5 pt-1.5 border-t border-slate-200 grid grid-cols-2 gap-1 text-[10px]">
+                <div>Distance: <b>${haven.distanceKm} km</b></div>
+                <div>Elevation: <b>${haven.elevation || "High"}m</b></div>
+                <div>Capacity: <b>${(haven.capacity || 0).toLocaleString()}</b></div>
+                <div>Type: <b>${haven.type}</b></div>
+              </div>
+              <div class="mt-1 text-[9.5px] text-slate-600 font-mono">📞 ${haven.contact}</div>
+            </div>
+          `);
+
+        havenMarker.on("click", () => {
+          if (onSelectSafeHaven) {
+            onSelectSafeHaven(haven.id);
+          }
+        });
+
+        safeHavenMarkersRef.current.push(havenMarker);
+      });
+    }
+
+  }, [latitude, longitude, bufferRadiusMeters, stats, activeEscapeRoute, showSafeHavens]);
 
   const toggleLegend = () => {
     setLegendOpen(!legendOpen);

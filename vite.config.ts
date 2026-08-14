@@ -1,41 +1,22 @@
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import { defineConfig } from 'vite';
+import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    plugins: [react()],
+    plugins: [tailwindcss(), react()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
       },
     },
     server: {
-      port: 7860,
-      proxy: {
-        '/api': {
-          target: 'http://localhost:7860',
-          changeOrigin: true,
-        },
-      },
+      // HMR is disabled in AI Studio via DISABLE_HMR env var.
+      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
+      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
-    },
-    build: {
-      // ✅ This ensures CSS is extracted to a separate file
-      cssCodeSplit: false,
-      // ✅ Generate manifest for asset loading
-      manifest: true,
-      rollupOptions: {
-        output: {
-          assetFileNames: 'assets/[name].[hash].[ext]',
-          chunkFileNames: 'assets/[name].[hash].js',
-          entryFileNames: 'assets/[name].[hash].js',
-          manualChunks: {
-            vendor: ['react', 'react-dom'],
-          },
-        },
-      },
     },
   };
 });

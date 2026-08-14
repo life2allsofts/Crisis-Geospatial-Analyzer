@@ -378,4 +378,8 @@ npm run lint
 
 This project is open-source and licensed under the MIT License.
 
+**Document Version:** 1.0  
+**Date:** 2026-06-28  
+**Author:** Isaac Tetteh-Apotey 
+
 

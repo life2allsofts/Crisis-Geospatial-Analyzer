@@ -13,6 +13,7 @@ import {
   ChevronUp
 } from "lucide-react";
 import { GeospatialStats } from "../types";
+import EscapeRoute from "./EscapeRoute";
 
 interface SafeHavensProps {
   stats: GeospatialStats | null;
