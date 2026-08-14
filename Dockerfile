@@ -15,8 +15,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY vite.config.ts ./
-# ✅ ADD Tailwind/PostCSS config files
-COPY postcss.config.js ./
+COPY postcss.config.cjs ./
 COPY tailwind.config.js ./
 
 RUN npm ci
