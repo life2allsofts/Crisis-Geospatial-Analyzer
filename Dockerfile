@@ -11,20 +11,20 @@ FROM node:18-bookworm-slim AS builder
 
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies (package*.json captures both package.json and package-lock.json)
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY vite.config.ts ./
 
-RUN rm -f package-lock.json && \
-    npm install --include=optional && \
-    npm install --no-save @tailwindcss/oxide-linux-x64-gnu || true
+# Use npm ci for deterministic installs; explicitly pull the Oxide Linux binding
+RUN npm ci --include=optional && \
+    npm install --no-save @tailwindcss/oxide-linux-x64-gnu
 
 # Copy source code
-COPY server.ts ./
-COPY index.html ./
 COPY backend/ ./backend/
 COPY frontend/ ./frontend/
+COPY index.html ./
+COPY server.ts ./
 
 # Build the application
 RUN npm run build
@@ -46,8 +46,8 @@ COPY --from=builder /app/frontend ./frontend/
 # Copy .env.example as .env (will be overridden by runtime secrets)
 COPY .env.example .env
 
-# Install production dependencies only
-RUN rm -f package-lock.json && npm install --production --ignore-scripts
+# Install production dependencies only using the lockfile
+RUN npm ci --production --ignore-scripts
 
 # Create non-root user
 RUN useradd -m -u 1001 nodejs

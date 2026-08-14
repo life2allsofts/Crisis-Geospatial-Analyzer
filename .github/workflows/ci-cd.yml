@@ -33,9 +33,15 @@ jobs:
       - name: 📦 Install dependencies
         run: |
           echo "📦 Installing dependencies..."
-          rm -rf node_modules package-lock.json
-          npm install --include=optional
-          npm install --no-save @tailwindcss/oxide-linux-x64-gnu || true
+          rm -rf node_modules
+          # Use lockfile for deterministic installs; fallback to npm install if missing
+          if [ -f package-lock.json ]; then
+            npm ci --include=optional
+          else
+            npm install --include=optional
+          fi
+          # Explicitly ensure Linux x64 GNU native binding for Tailwind CSS v4 (Oxide)
+          npm install --no-save @tailwindcss/oxide-linux-x64-gnu
           echo "✅ Dependencies and native bindings installed"
 
       - name: 🔍 TypeScript Lint & Type Check
@@ -101,10 +107,18 @@ jobs:
       - name: 📦 Install dependencies
         run: |
           echo "📦 Installing dependencies..."
-          rm -rf node_modules package-lock.json
-          npm install --include=optional
-          npm install --no-save @tailwindcss/oxide-linux-x64-gnu || true
+          rm -rf node_modules
+          if [ -f package-lock.json ]; then
+            npm ci --include=optional
+          else
+            npm install --include=optional
+          fi
+          npm install --no-save @tailwindcss/oxide-linux-x64-gnu
           echo "✅ Dependencies ready for build"
+
+      - name: 🔍 Verify Tailwind CSS Oxide binding
+        run: |
+          node -e "require('@tailwindcss/oxide')" && echo "✅ Oxide binding verified" || (echo "❌ Oxide binding missing"; exit 1)
 
       - name: 📦 Build application
         run: |
@@ -158,9 +172,18 @@ jobs:
       - name: 📦 Install dependencies
         run: |
           echo "📦 Installing dependencies..."
-          rm -rf node_modules package-lock.json
-          npm install --include=optional
-          npm install --no-save @tailwindcss/oxide-linux-x64-gnu || true
+          rm -rf node_modules
+          if [ -f package-lock.json ]; then
+            npm ci --include=optional
+          else
+            npm install --include=optional
+          fi
+          npm install --no-save @tailwindcss/oxide-linux-x64-gnu
+          echo "✅ Dependencies ready for build"
+
+      - name: 🔍 Verify Tailwind CSS Oxide binding
+        run: |
+          node -e "require('@tailwindcss/oxide')" && echo "✅ Oxide binding verified" || (echo "❌ Oxide binding missing"; exit 1)
 
       - name: 📦 Build application
         run: |
@@ -238,14 +261,14 @@ jobs:
 
           WORKDIR /app
 
-          # Install dependencies
+          # Install dependencies (package*.json captures both package.json and package-lock.json)
           COPY package*.json ./
           COPY tsconfig.json ./
           COPY vite.config.ts ./
 
-          RUN rm -f package-lock.json && \
-              npm install --include=optional && \
-              npm install --no-save @tailwindcss/oxide-linux-x64-gnu || true
+          # Use npm ci for deterministic installs; explicitly pull the Oxide Linux binding
+          RUN npm ci --include=optional && \
+              npm install --no-save @tailwindcss/oxide-linux-x64-gnu
 
           # Copy source code
           COPY backend/ ./backend/
@@ -273,8 +296,8 @@ jobs:
           # Copy .env.example as .env (will be overridden by HF secrets)
           COPY .env.example .env
 
-          # Install production dependencies only
-          RUN rm -f package-lock.json && npm install --production --ignore-scripts
+          # Install production dependencies only using the lockfile
+          RUN npm ci --production --ignore-scripts
 
           # Create non-root user
           RUN useradd -m -u 1001 nodejs
