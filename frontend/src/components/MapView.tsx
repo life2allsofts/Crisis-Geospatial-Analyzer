@@ -394,23 +394,25 @@ export default function MapView({
     <div className="relative w-full h-full min-h-[350px] border-0 rounded-none overflow-hidden bg-slate-950">
       <div ref={mapContainerRef} className="w-full h-full" id="geospatial-visualizer-canvas" />
       
-      {/* ===== BOTTOM RIGHT HAZARD LEGEND (Compact, crisp, z-[400] to prevent ghosting) ===== */}
-      <div className="absolute bottom-3 right-3 z-[400] max-w-[calc(100%-1.5rem)]">
-        <div className="bg-slate-950 border border-slate-700 rounded-lg shadow-xl w-[130px] sm:w-[145px] overflow-hidden transition-all duration-300">
+      {/* ===== BOTTOM LEFT HAZARD LEGEND (In line with bottom Leaflet attribution bar) ===== */}
+      <div className="absolute bottom-0 left-0 z-[400] max-w-[calc(100%-1.5rem)]">
+        <div className="bg-slate-950/95 border-t border-r border-slate-700 rounded-tr-lg shadow-2xl backdrop-blur-sm w-[130px] sm:w-[150px] overflow-hidden transition-all duration-300">
           {/* Legend Header - Always Visible */}
           <div
             onClick={toggleLegend}
-            className="flex items-center justify-between px-2.5 py-1.5 cursor-pointer hover:bg-slate-900 transition-colors select-none"
+            className="flex items-center justify-between px-2.5 py-1 cursor-pointer hover:bg-slate-900 transition-colors select-none text-[9.5px]"
           >
-            <span className="text-slate-300 font-semibold uppercase tracking-wider text-[9px]">🗺️ Hazard Legend</span>
-            <span className={`text-slate-400 text-xs transition-transform duration-300 ${legendOpen ? 'rotate-180' : 'rotate-0'}`}>
-              ▼
+            <span className="text-slate-300 font-semibold uppercase tracking-wider text-[9px] flex items-center gap-1">
+              <span>🗺️</span> <span>Hazard Legend</span>
+            </span>
+            <span className={`text-slate-400 text-[10px] transition-transform duration-300 ${legendOpen ? 'rotate-180' : 'rotate-0'}`}>
+              ▲
             </span>
           </div>
 
           {/* Legend Items - Collapsible */}
-          <div className={`transition-all duration-300 overflow-hidden ${legendOpen ? 'max-h-[200px] opacity-100' : 'max-h-0 opacity-0'}`}>
-            <div className="px-2.5 pb-2.5 pt-1 border-t border-slate-800">
+          <div className={`transition-all duration-300 overflow-hidden ${legendOpen ? 'max-h-[220px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className="px-2.5 pb-2 pt-1 border-t border-slate-800 bg-slate-950">
               <div className="flex items-center gap-2 py-0.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-[#ef4444] border border-white/20 flex-shrink-0" />
                 <span className="text-slate-300 text-[9.5px]">Critical</span>
@@ -427,7 +429,7 @@ export default function MapView({
                 <div className="w-2.5 h-2.5 rounded-full bg-[#10b981] border border-white/20 flex-shrink-0" />
                 <span className="text-slate-300 text-[9.5px]">Low</span>
               </div>
-              <div className="mt-1.5 pt-1 border-t border-slate-800 text-[8px] text-slate-400 text-center font-mono">
+              <div className="mt-1 pt-1 border-t border-slate-800 text-[8px] text-slate-400 text-center font-mono">
                 Click map to relocate
               </div>
             </div>
