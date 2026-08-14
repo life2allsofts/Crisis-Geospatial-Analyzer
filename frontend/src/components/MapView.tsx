@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { GeospatialStats } from "../types";
+import { GeospatialStats, MapTileStyle } from "../types";
 
 interface MapViewProps {
   latitude: number;
@@ -10,6 +10,8 @@ interface MapViewProps {
   activeEscapeRoute?: any | null;
   showSafeHavens?: boolean;
   onSelectSafeHaven?: (havenId: string) => void;
+  mapStyle?: MapTileStyle;
+  onMapStyleChange?: (style: MapTileStyle) => void;
 }
 
 // Coordinate list of all known floodplains to render reference overlays on startup!
@@ -34,19 +36,12 @@ const REFERENCE_HAZARDS = [
 ];
 
 // Map tile layer URLs
-const TILE_LAYERS = {
+const TILE_LAYERS: Record<MapTileStyle, string> = {
   dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
   light: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
   satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
   streets: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 };
-
-const MAP_STYLES = [
-  { id: "dark", label: "Dark", icon: "🌙" },
-  { id: "light", label: "Light", icon: "☀️" },
-  { id: "satellite", label: "Satellite", icon: "🛰️" },
-  { id: "streets", label: "Streets", icon: "🗺️" }
-] as const;
 
 export default function MapView({
   latitude,
@@ -56,7 +51,9 @@ export default function MapView({
   onMapClick,
   activeEscapeRoute,
   showSafeHavens = false,
-  onSelectSafeHaven
+  onSelectSafeHaven,
+  mapStyle = "dark",
+  onMapStyleChange
 }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -69,56 +66,79 @@ export default function MapView({
   const activeEscapeRouteHazardsRef = useRef<any[]>([]);
   const safeHavenMarkersRef = useRef<any[]>([]);
   const [legendOpen, setLegendOpen] = useState(false);
-  const [controlsOpen, setControlsOpen] = useState(false);
-  const [mapStyle, setMapStyle] = useState<"dark" | "light" | "satellite" | "streets">("dark");
 
   // Function to update map tiles dynamically
-  const updateMapTiles = (style: "dark" | "light" | "satellite" | "streets") => {
+  const updateMapTiles = (style: MapTileStyle) => {
     const map = mapInstanceRef.current;
     const L = (window as any).L;
     if (!map || !L) return;
 
     // Remove existing tile layer
     if (tileLayerRef.current) {
-      map.removeLayer(tileLayerRef.current);
+      try {
+        map.removeLayer(tileLayerRef.current);
+      } catch (e) {
+        console.warn("Could not remove previous tile layer", e);
+      }
     }
 
     // Add new tile layer
-    const tileUrl = TILE_LAYERS[style];
+    const tileUrl = TILE_LAYERS[style] || TILE_LAYERS.dark;
     const attribution = style === "satellite" 
       ? '&copy; <a href="https://www.esri.com">Esri</a>'
       : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
+    const subdomains = style === "satellite" ? [] : (style === "streets" ? ["a", "b", "c"] : ["a", "b", "c", "d"]);
+
     const newTileLayer = L.tileLayer(tileUrl, {
       attribution,
-      maxZoom: 19
+      maxZoom: 19,
+      subdomains,
+      zIndex: 1
     }).addTo(map);
+
+    if (newTileLayer.bringToBack) {
+      newTileLayer.bringToBack();
+    }
     
     tileLayerRef.current = newTileLayer;
-    setMapStyle(style);
   };
+
+  // Sync with mapStyle prop when it changes
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      updateMapTiles(mapStyle);
+    }
+  }, [mapStyle]);
 
   useEffect(() => {
     // 1. Double check if Leaflet L is loaded via CDN inside index.html
     const L = (window as any).L;
     if (!L || !mapContainerRef.current) return;
 
-    // 2. Initialize map if not yet created. Standard center covers whole Ghana.
+    // 2. Initialize map if not yet created. Standard center covers active target.
     if (!mapInstanceRef.current) {
       const map = L.map(mapContainerRef.current, {
-        center: [7.9465, -1.0232],
-        zoom: 7,
+        center: [latitude || 5.5560, longitude || -0.1969],
+        zoom: 12,
         zoomControl: true,
         scrollWheelZoom: true
       });
 
       // Default style
+      const subdomains = mapStyle === "satellite" ? [] : (mapStyle === "streets" ? ["a", "b", "c"] : ["a", "b", "c", "d"]);
       const initialTileLayer = L.tileLayer(TILE_LAYERS[mapStyle], {
         attribution: mapStyle === "satellite"
           ? '&copy; <a href="https://www.esri.com">Esri</a>'
           : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        maxZoom: 19
+        maxZoom: 19,
+        subdomains,
+        zIndex: 1
       }).addTo(map);
+      
+      if (initialTileLayer.bringToBack) {
+        initialTileLayer.bringToBack();
+      }
       tileLayerRef.current = initialTileLayer;
 
       // Event listener: clicking custom map updates position inputs
@@ -358,66 +378,19 @@ export default function MapView({
     setLegendOpen(!legendOpen);
   };
 
-  const toggleControls = () => {
-    setControlsOpen(!controlsOpen);
-  };
-
-  const handleStyleChange = (style: "dark" | "light" | "satellite" | "streets") => {
-    updateMapTiles(style);
-    setControlsOpen(false);
-  };
-
   return (
     <div className="relative w-full h-[320px] md:h-full min-h-[300px] border border-slate-700 rounded-xl overflow-hidden shadow-2xl bg-slate-950">
       <div ref={mapContainerRef} className="w-full h-full" id="geospatial-visualizer-canvas" />
       
-      {/* ===== BOTTOM RIGHT CONTROLS GROUP ===== */}
-      <div className="absolute bottom-4 right-4 z-[999] flex items-end gap-2 max-w-[calc(100%-2rem)]">
-        
-        {/* Map Style Controls - Placed at the left of the hazard legend */}
-        <div className="relative">
-          {/* Controls Toggle Button */}
-          <button
-            onClick={toggleControls}
-            className="bg-slate-900/90 backdrop-blur border border-slate-700 rounded-lg px-2.5 py-2 text-slate-300 hover:text-white hover:bg-slate-800/90 transition-all shadow-xl flex items-center gap-1.5 text-[10px] font-medium cursor-pointer"
-            title="Map Style"
-          >
-            <span>{MAP_STYLES.find(s => s.id === mapStyle)?.icon || "🗺️"}</span>
-            <span className="hidden sm:inline">{MAP_STYLES.find(s => s.id === mapStyle)?.label || "Style"}</span>
-            <span className={`text-slate-500 text-[8px] transition-transform duration-300 ${controlsOpen ? 'rotate-180' : 'rotate-0'}`}>
-              ▼
-            </span>
-          </button>
-
-          {/* Controls Dropdown - Opens upward above the button */}
-          {controlsOpen && (
-            <div className="absolute bottom-full left-0 mb-1.5 bg-slate-900/90 backdrop-blur border border-slate-700 rounded-lg p-1 shadow-xl flex flex-col min-w-[100px] animate-in fade-in slide-in-from-bottom-2 duration-150">
-              {MAP_STYLES.map((style) => (
-                <button
-                  key={style.id}
-                  onClick={() => handleStyleChange(style.id)}
-                  className={`px-2.5 py-1.5 rounded-md flex items-center gap-2 text-[10px] text-left w-full transition-all cursor-pointer ${
-                    mapStyle === style.id 
-                      ? "bg-slate-700 text-white font-medium" 
-                      : "text-slate-400 hover:text-white hover:bg-slate-800"
-                  }`}
-                >
-                  <span>{style.icon}</span>
-                  <span>{style.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* ===== HAZARD LEGEND - Collapsible by default ===== */}
-        <div className="bg-slate-900/90 backdrop-blur border border-slate-700 rounded-lg shadow-xl w-[135px] sm:w-[150px] overflow-hidden transition-all duration-300">
+      {/* ===== BOTTOM RIGHT HAZARD LEGEND (Compact, crisp, z-[400] to prevent ghosting) ===== */}
+      <div className="absolute bottom-3 right-3 z-[400] max-w-[calc(100%-1.5rem)]">
+        <div className="bg-slate-950 border border-slate-700 rounded-lg shadow-xl w-[130px] sm:w-[145px] overflow-hidden transition-all duration-300">
           {/* Legend Header - Always Visible */}
           <div
             onClick={toggleLegend}
-            className="flex items-center justify-between px-2.5 py-2 cursor-pointer hover:bg-slate-800/50 transition-colors select-none"
+            className="flex items-center justify-between px-2.5 py-1.5 cursor-pointer hover:bg-slate-900 transition-colors select-none"
           >
-            <span className="text-slate-400 font-semibold uppercase tracking-wider text-[9px]">🗺️ Legend</span>
+            <span className="text-slate-300 font-semibold uppercase tracking-wider text-[9px]">🗺️ Hazard Legend</span>
             <span className={`text-slate-400 text-xs transition-transform duration-300 ${legendOpen ? 'rotate-180' : 'rotate-0'}`}>
               ▼
             </span>
@@ -425,30 +398,29 @@ export default function MapView({
 
           {/* Legend Items - Collapsible */}
           <div className={`transition-all duration-300 overflow-hidden ${legendOpen ? 'max-h-[200px] opacity-100' : 'max-h-0 opacity-0'}`}>
-            <div className="px-2.5 pb-2.5 pt-1 border-t border-slate-800/50">
-              <div className="flex items-center gap-2 py-1">
+            <div className="px-2.5 pb-2.5 pt-1 border-t border-slate-800">
+              <div className="flex items-center gap-2 py-0.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-[#ef4444] border border-white/20 flex-shrink-0" />
                 <span className="text-slate-300 text-[9.5px]">Critical</span>
               </div>
-              <div className="flex items-center gap-2 py-1">
+              <div className="flex items-center gap-2 py-0.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-[#f97316] border border-white/20 flex-shrink-0" />
                 <span className="text-slate-300 text-[9.5px]">High</span>
               </div>
-              <div className="flex items-center gap-2 py-1">
+              <div className="flex items-center gap-2 py-0.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-[#eab308] border border-white/20 flex-shrink-0" />
                 <span className="text-slate-300 text-[9.5px]">Medium</span>
               </div>
-              <div className="flex items-center gap-2 py-1">
+              <div className="flex items-center gap-2 py-0.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-[#10b981] border border-white/20 flex-shrink-0" />
                 <span className="text-slate-300 text-[9.5px]">Low</span>
               </div>
-              <div className="mt-2 pt-1 border-t border-slate-800/50 text-[8px] text-slate-500 text-center font-mono">
+              <div className="mt-1.5 pt-1 border-t border-slate-800 text-[8px] text-slate-400 text-center font-mono">
                 Click map to relocate
               </div>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

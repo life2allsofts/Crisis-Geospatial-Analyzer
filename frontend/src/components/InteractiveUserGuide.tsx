@@ -46,15 +46,15 @@ export default function InteractiveUserGuide({
   if (!isOpen) return null;
 
   return (
-    <div className={`fixed bottom-4 right-4 z-40 max-w-[420px] w-[calc(100vw-2rem)] rounded-2xl border shadow-2xl transition-all duration-300 ${
+    <div className={`fixed bottom-4 right-4 z-[1050] max-w-[420px] w-[calc(100vw-2rem)] rounded-2xl border shadow-2xl transition-all duration-300 ${
       isDarkMode 
-        ? 'bg-slate-950/95 border-indigo-500/40 text-slate-100 shadow-indigo-950/50' 
-        : 'bg-white/95 border-indigo-200 text-slate-900 shadow-xl'
-    } backdrop-blur-xl animate-in slide-in-from-bottom-5`}>
+        ? 'bg-slate-950 border-indigo-500/50 text-slate-100 shadow-2xl shadow-indigo-950/80' 
+        : 'bg-white border-indigo-200 text-slate-900 shadow-2xl'
+    } animate-in slide-in-from-bottom-5`}>
       
       {/* Guide Header */}
       <div className={`px-4 py-3 border-b flex items-center justify-between ${
-        isDarkMode ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-slate-50'
+        isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-50'
       }`}>
         <div className="flex items-center gap-2">
           <div className="p-1 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">

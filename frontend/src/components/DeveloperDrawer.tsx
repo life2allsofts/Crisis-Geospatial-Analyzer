@@ -48,14 +48,14 @@ export default function DeveloperDrawer({
 
   return (
     <>
-      {/* Non-blocking soft backdrop so user can still clearly see map & main screen */}
+      {/* Non-blocking soft backdrop without blur so user can still clearly see map & main screen */}
       <div
-        className="fixed inset-0 bg-slate-950/40 backdrop-blur-[2px] z-40 transition-opacity"
+        className="fixed inset-0 bg-slate-950/40 z-40 transition-opacity"
         onClick={onClose}
       />
 
       {/* Floating Right Slide-Over Panel */}
-      <div className={`fixed top-0 right-0 bottom-0 w-full sm:w-[420px] max-w-full ${isDarkMode ? 'bg-slate-950/95 text-slate-100 border-slate-800/80' : 'bg-white/95 text-slate-900 border-slate-200'} backdrop-blur-xl border-l z-50 shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-250`}>
+      <div className={`fixed top-0 right-0 bottom-0 w-full sm:w-[420px] max-w-full ${isDarkMode ? 'bg-slate-950 text-slate-100 border-slate-800' : 'bg-white text-slate-900 border-slate-200'} border-l z-50 shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-250`}>
         
         {/* Drawer Header */}
         <div className={`px-5 py-4 border-b ${isDarkMode ? 'border-slate-900 bg-slate-950/70' : 'border-slate-200 bg-slate-50/70'} flex items-center justify-between`}>
@@ -67,7 +67,7 @@ export default function DeveloperDrawer({
                   Civil Defense System
                 </h3>
                 <span className={`text-[9px] font-mono px-2 py-0.5 rounded font-bold ${tc.badgeBg}`}>
-                  v2.4.0
+                  v2.4.1
                 </span>
               </div>
               <p className={`text-[10px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} font-sans`}>

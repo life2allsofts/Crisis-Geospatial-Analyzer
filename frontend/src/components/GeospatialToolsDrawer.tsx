@@ -74,14 +74,14 @@ export default function GeospatialToolsDrawer({
 
   return (
     <>
-      {/* Soft translucent backdrop for non-intrusive focus */}
+      {/* Soft translucent backdrop without blur for clean crisp visibility */}
       <div
-        className="fixed inset-0 bg-slate-950/40 backdrop-blur-[2px] z-40 transition-opacity"
+        className="fixed inset-0 bg-slate-950/40 z-40 transition-opacity"
         onClick={onClose}
       />
 
       {/* Floating Left Slide-Over Panel */}
-      <div className={`fixed top-0 left-0 bottom-0 w-full sm:w-[400px] max-w-full ${isDarkMode ? 'bg-slate-950/95 text-slate-100 border-slate-800/80' : 'bg-white/95 text-slate-900 border-slate-200'} backdrop-blur-xl border-r z-50 shadow-2xl flex flex-col justify-between animate-in slide-in-from-left duration-250`}>
+      <div className={`fixed top-0 left-0 bottom-0 w-full sm:w-[400px] max-w-full ${isDarkMode ? 'bg-slate-950 text-slate-100 border-slate-800' : 'bg-white text-slate-900 border-slate-200'} border-r z-50 shadow-2xl flex flex-col justify-between animate-in slide-in-from-left duration-250`}>
         
         {/* Drawer Header */}
         <div className={`px-5 py-4 border-b ${isDarkMode ? 'border-slate-900 bg-slate-950/70' : 'border-slate-200 bg-slate-50/70'} flex items-center justify-between`}>

@@ -310,4 +310,6 @@ export interface EscapeRouteProfile {
   routeAlert: string;
 }
 
+export type MapTileStyle = "dark" | "light" | "satellite" | "streets";
+
 

@@ -19,7 +19,8 @@ import {
   AiRiskResponse,
   AnalyzeApiResponse,
   CLIMATE_SCENARIOS,
-  EscapeRouteProfile
+  EscapeRouteProfile,
+  MapTileStyle
 } from "./types";
 import { 
   MapView, 
@@ -81,6 +82,9 @@ export default function App() {
 
   // Floating Interactive User Guide state
   const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
+
+  // Map Tile Style State (Dark, Satellite, Streets, Light)
+  const [mapStyle, setMapStyle] = useState<MapTileStyle>("dark");
 
   // Active screen layout state: "map" | "metrics" | "ai_report" | "action_plan" | "safe_havens" | "escape_route" | "historical_timeline"
   const [activeScreen, setActiveScreen] = useState<string>("map");
@@ -431,7 +435,7 @@ export default function App() {
                   <h1 className="text-xs sm:text-sm font-black font-display tracking-tight text-white flex items-center gap-1.5 truncate">
                     <span className={isDarkMode ? "text-white" : "text-slate-900"}>CRISIS GEOSPATIAL</span>
                     <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded font-bold ${tc.badgeBg}`}>
-                      GHANA v2.4
+                      GHANA v2.4.1
                     </span>
                   </h1>
                 </div>
@@ -528,6 +532,8 @@ export default function App() {
         selectedScenarioId={selectedScenarioId}
         onScenarioChange={handleScenarioChange}
         onPresetSelect={handlePresetSelect}
+        mapStyle={mapStyle}
+        onMapStyleChange={setMapStyle}
         tc={tc}
         isDarkMode={isDarkMode}
         stats={stats}
@@ -552,6 +558,8 @@ export default function App() {
                     onMapClick={handleMapClick}
                     activeEscapeRoute={activeEscapeRoute}
                     showSafeHavens={showSafeHavens}
+                    mapStyle={mapStyle}
+                    onMapStyleChange={setMapStyle}
                     onSelectSafeHaven={(havenId) => {
                       setSelectedHavenId(havenId);
                       setActiveScreen("escape_route");

@@ -14,9 +14,17 @@ import {
   Check, 
   Sliders, 
   Zap,
-  Activity
+  Activity,
+  Map as MapIcon
 } from "lucide-react";
-import { GHANA_PRESETS, CLIMATE_SCENARIOS, LocationPreset } from "../types";
+import { GHANA_PRESETS, CLIMATE_SCENARIOS, LocationPreset, MapTileStyle } from "../types";
+
+export const MAP_STYLES = [
+  { id: "dark" as MapTileStyle, label: "Dark Map", icon: "🌙", desc: "Carto Dark Matter" },
+  { id: "satellite" as MapTileStyle, label: "Satellite", icon: "🛰️", desc: "ESRI World Imagery" },
+  { id: "streets" as MapTileStyle, label: "Streets", icon: "🗺️", desc: "OpenStreetMap" },
+  { id: "light" as MapTileStyle, label: "Light Map", icon: "☀️", desc: "Carto Positron" }
+];
 
 interface NavigationMenuBarProps {
   activeScreen: string;
@@ -26,6 +34,8 @@ interface NavigationMenuBarProps {
   selectedScenarioId: string;
   onScenarioChange: (scenarioId: string) => void;
   onPresetSelect: (preset: LocationPreset) => void;
+  mapStyle: MapTileStyle;
+  onMapStyleChange: (style: MapTileStyle) => void;
   tc: any;
   isDarkMode: boolean;
   stats?: any;
@@ -39,15 +49,19 @@ export default function NavigationMenuBar({
   selectedScenarioId,
   onScenarioChange,
   onPresetSelect,
+  mapStyle,
+  onMapStyleChange,
   tc,
   isDarkMode,
   stats
 }: NavigationMenuBarProps) {
   const [presetsDropdownOpen, setPresetsDropdownOpen] = useState(false);
   const [scenariosDropdownOpen, setScenariosDropdownOpen] = useState(false);
+  const [mapStyleDropdownOpen, setMapStyleDropdownOpen] = useState(false);
   
   const presetsRef = useRef<HTMLDivElement>(null);
   const scenariosRef = useRef<HTMLDivElement>(null);
+  const mapStyleRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -57,6 +71,9 @@ export default function NavigationMenuBar({
       }
       if (scenariosRef.current && !scenariosRef.current.contains(event.target as Node)) {
         setScenariosDropdownOpen(false);
+      }
+      if (mapStyleRef.current && !mapStyleRef.current.contains(event.target as Node)) {
+        setMapStyleDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -74,24 +91,25 @@ export default function NavigationMenuBar({
   ];
 
   const currentScenario = CLIMATE_SCENARIOS.find(s => s.id === selectedScenarioId) || CLIMATE_SCENARIOS[0];
+  const currentMapStyle = MAP_STYLES.find(s => s.id === mapStyle) || MAP_STYLES[0];
 
   return (
-    <div className={`border-b ${isDarkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-md sticky top-[65px] z-30 transition-colors duration-200`}>
+    <div className={`border-b ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} sticky top-[65px] z-40 transition-colors duration-200 shadow-sm`}>
       <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-2 py-2 overflow-x-auto no-scrollbar">
+        <div className="flex items-center justify-between gap-3 py-2 relative">
           
-          {/* LEFT: PRIMARY FEATURE NAVIGATION TABS */}
-          <div className="flex items-center gap-1 shrink-0">
+          {/* LEFT: PRIMARY FEATURE NAVIGATION TABS (Scrollable horizontally on mobile/tablet without clipping dropdowns) */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 min-w-0 flex-1 scroll-smooth">
             {navTabs.map((tab) => {
               const isActive = activeScreen === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveScreen(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer shrink-0 ${
                     isActive
                       ? `bg-indigo-600 text-white shadow-md font-bold`
-                      : `${isDarkMode ? 'text-slate-300 hover:text-white hover:bg-slate-800/70' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`
+                      : `${isDarkMode ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`
                   }`}
                 >
                   <span className={isActive ? "text-white" : "text-slate-400"}>
@@ -112,16 +130,80 @@ export default function NavigationMenuBar({
             })}
           </div>
 
-          {/* RIGHT: CONTROLS & TOGGLES (SAFE HAVENS, PRESETS, SCENARIOS) */}
-          <div className="flex items-center gap-2 shrink-0 ml-auto">
+          {/* RIGHT: CONTROLS & TOGGLES (MAP STYLE, SAFE HAVENS, PRESETS, SCENARIOS) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 relative">
             
-            {/* 🏥 SAFE HAVENS TOGGLE (Crucial Requirement: Safe havens not shown by default, toggle on nav bar) */}
+            {/* 🗺️ MAP STYLE SELECTOR IN NAV BAR */}
+            <div className="relative" ref={mapStyleRef}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMapStyleDropdownOpen(prev => !prev);
+                  setPresetsDropdownOpen(false);
+                  setScenariosDropdownOpen(false);
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all whitespace-nowrap cursor-pointer shadow-sm ${
+                  mapStyleDropdownOpen
+                    ? 'border-indigo-500 text-indigo-400 bg-indigo-950/40 ring-1 ring-indigo-500'
+                    : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-750' : 'bg-slate-100 border-slate-300 text-slate-700 hover:text-slate-900 hover:bg-slate-200'}`
+                }`}
+                title="Select Map Style (Dark, Satellite, Streets, Light)"
+              >
+                <span>{currentMapStyle.icon}</span>
+                <span className="hidden sm:inline font-sans">{currentMapStyle.label.split(" ")[0]}</span>
+                <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${mapStyleDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {mapStyleDropdownOpen && (
+                <div 
+                  className={`absolute right-0 top-full mt-1.5 w-52 rounded-xl border p-1.5 shadow-2xl z-[100] animate-in fade-in zoom-in-95 duration-150 ${
+                    isDarkMode ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
+                  }`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="px-2 py-1 text-[9px] font-mono font-bold uppercase text-slate-400 border-b border-slate-800/40 mb-1">
+                    Map Base Layer
+                  </div>
+                  {MAP_STYLES.map((style) => {
+                    const isSelected = style.id === mapStyle;
+                    return (
+                      <button
+                        type="button"
+                        key={style.id}
+                        onClick={() => {
+                          onMapStyleChange(style.id);
+                          setMapStyleDropdownOpen(false);
+                        }}
+                        className={`w-full text-left p-2 rounded-lg text-xs transition-all flex items-center justify-between cursor-pointer ${
+                          isSelected
+                            ? 'bg-indigo-600/20 text-indigo-300 font-bold border border-indigo-500/30'
+                            : isDarkMode ? 'hover:bg-slate-900 text-slate-300 hover:text-white' : 'hover:bg-slate-100 text-slate-700 hover:text-slate-900'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">{style.icon}</span>
+                          <div>
+                            <div className="font-semibold">{style.label}</div>
+                            <div className="text-[9.5px] text-slate-400 font-normal">{style.desc}</div>
+                          </div>
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-indigo-400 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* 🏥 SAFE HAVENS TOGGLE (Safe havens not shown by default, toggle on nav bar) */}
             <button
+              type="button"
               onClick={onToggleSafeHavens}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all whitespace-nowrap cursor-pointer shadow-sm ${
                 showSafeHavens
                   ? 'bg-emerald-600/20 border-emerald-500/50 text-emerald-400 font-bold hover:bg-emerald-600/30'
-                  : `${isDarkMode ? 'bg-slate-800/80 border-slate-700/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800' : 'bg-slate-100 border-slate-300 text-slate-600 hover:text-slate-900 hover:bg-slate-200'}`
+                  : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-750' : 'bg-slate-100 border-slate-300 text-slate-600 hover:text-slate-900 hover:bg-slate-200'}`
               }`}
               title="Toggle Safe Havens visibility on Map"
             >
@@ -137,33 +219,42 @@ export default function NavigationMenuBar({
             {/* 🎯 PRESETS DROPDOWN */}
             <div className="relative" ref={presetsRef}>
               <button
-                onClick={() => {
-                  setPresetsDropdownOpen(!presetsDropdownOpen);
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPresetsDropdownOpen(prev => !prev);
                   setScenariosDropdownOpen(false);
+                  setMapStyleDropdownOpen(false);
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all whitespace-nowrap cursor-pointer shadow-sm ${
                   presetsDropdownOpen
-                    ? 'border-indigo-500 text-indigo-400 bg-indigo-950/30'
-                    : `${isDarkMode ? 'bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-white hover:bg-slate-800' : 'bg-slate-100 border-slate-300 text-slate-700 hover:text-slate-900 hover:bg-slate-200'}`
+                    ? 'border-indigo-500 text-indigo-400 bg-indigo-950/40 ring-1 ring-indigo-500'
+                    : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-750' : 'bg-slate-100 border-slate-300 text-slate-700 hover:text-slate-900 hover:bg-slate-200'}`
                 }`}
+                title="Select predefined Ghana floodplain hotspot"
               >
                 <Waves className="w-3.5 h-3.5 text-indigo-400" />
                 <span className="hidden sm:inline">Presets</span>
-                <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${presetsDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${presetsDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {presetsDropdownOpen && (
-                <div className={`absolute right-0 top-full mt-1.5 w-64 rounded-xl border p-1.5 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 ${
-                  isDarkMode ? 'bg-slate-950/95 border-slate-800 text-slate-200' : 'bg-white/95 border-slate-200 text-slate-800'
-                } backdrop-blur-xl max-h-72 overflow-y-auto`}>
+                <div 
+                  className={`absolute right-0 top-full mt-1.5 w-64 rounded-xl border p-1.5 shadow-2xl z-[100] animate-in fade-in zoom-in-95 duration-150 ${
+                    isDarkMode ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
+                  } max-h-80 overflow-y-auto`}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="px-2 py-1 text-[9px] font-mono font-bold uppercase text-slate-400 border-b border-slate-800/40 mb-1">
                     Select Ghana Floodplain Hotspot
                   </div>
                   {GHANA_PRESETS.map((preset) => (
                     <button
+                      type="button"
                       key={preset.name}
                       onClick={() => {
                         onPresetSelect(preset);
+                        setActiveScreen("map");
                         setPresetsDropdownOpen(false);
                       }}
                       className={`w-full text-left p-2 rounded-lg text-xs transition-all flex items-center justify-between cursor-pointer ${
@@ -174,7 +265,7 @@ export default function NavigationMenuBar({
                         <div className="font-semibold">{preset.name}</div>
                         <div className="text-[10px] text-slate-500">{preset.region}</div>
                       </div>
-                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-amber-400 font-bold">
+                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-amber-400 font-bold shrink-0 ml-2">
                         {preset.dangerLevel}
                       </span>
                     </button>
@@ -186,25 +277,32 @@ export default function NavigationMenuBar({
             {/* 🌧️ SCENARIOS DROPDOWN */}
             <div className="relative" ref={scenariosRef}>
               <button
-                onClick={() => {
-                  setScenariosDropdownOpen(!scenariosDropdownOpen);
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setScenariosDropdownOpen(prev => !prev);
                   setPresetsDropdownOpen(false);
+                  setMapStyleDropdownOpen(false);
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all whitespace-nowrap cursor-pointer shadow-sm ${
                   scenariosDropdownOpen
-                    ? 'border-indigo-500 text-indigo-400 bg-indigo-950/30'
-                    : `${isDarkMode ? 'bg-slate-800/80 border-slate-700/60 text-slate-300 hover:text-white hover:bg-slate-800' : 'bg-slate-100 border-slate-300 text-slate-700 hover:text-slate-900 hover:bg-slate-200'}`
+                    ? 'border-indigo-500 text-indigo-400 bg-indigo-950/40 ring-1 ring-indigo-500'
+                    : `${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-750' : 'bg-slate-100 border-slate-300 text-slate-700 hover:text-slate-900 hover:bg-slate-200'}`
                 }`}
+                title="Simulate Climate & Rainfall Scenarios"
               >
                 <CloudRain className="w-3.5 h-3.5 text-teal-400" />
                 <span className="hidden md:inline font-mono text-[11px] font-semibold">{currentScenario.name.split(" ")[0]}</span>
-                <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${scenariosDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${scenariosDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {scenariosDropdownOpen && (
-                <div className={`absolute right-0 top-full mt-1.5 w-72 rounded-xl border p-1.5 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 ${
-                  isDarkMode ? 'bg-slate-950/95 border-slate-800 text-slate-200' : 'bg-white/95 border-slate-200 text-slate-800'
-                } backdrop-blur-xl`}>
+                <div 
+                  className={`absolute right-0 top-full mt-1.5 w-72 rounded-xl border p-1.5 shadow-2xl z-[100] animate-in fade-in zoom-in-95 duration-150 ${
+                    isDarkMode ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
+                  }`}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="px-2 py-1 text-[9px] font-mono font-bold uppercase text-slate-400 border-b border-slate-800/40 mb-1">
                     Simulate Climate Scenario
                   </div>
@@ -212,6 +310,7 @@ export default function NavigationMenuBar({
                     const isSelected = sc.id === selectedScenarioId;
                     return (
                       <button
+                        type="button"
                         key={sc.id}
                         onClick={() => {
                           onScenarioChange(sc.id);
@@ -219,7 +318,7 @@ export default function NavigationMenuBar({
                         }}
                         className={`w-full text-left p-2 rounded-lg text-xs transition-all flex items-start justify-between gap-2 cursor-pointer ${
                           isSelected
-                            ? 'bg-indigo-600/20 text-indigo-300 font-bold'
+                            ? 'bg-indigo-600/20 text-indigo-300 font-bold border border-indigo-500/30'
                             : isDarkMode ? 'hover:bg-slate-900 text-slate-300 hover:text-white' : 'hover:bg-slate-100 text-slate-700 hover:text-slate-900'
                         }`}
                       >
