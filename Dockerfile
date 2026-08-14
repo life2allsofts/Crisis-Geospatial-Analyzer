@@ -7,7 +7,7 @@
 # --------------------------------------------
 # Build Stage
 # --------------------------------------------
-FROM node:18-alpine AS builder
+FROM node:18-bookworm-slim AS builder
 
 WORKDIR /app
 
@@ -18,7 +18,8 @@ COPY vite.config.ts ./
 COPY postcss.config.cjs ./
 COPY tailwind.config.js ./
 
-RUN npm ci
+RUN npm ci --include=optional
+RUN npm rebuild @tailwindcss/oxide --foreground-scripts
 
 # Copy source code
 COPY backend/ ./backend/
@@ -32,7 +33,7 @@ RUN npm run build
 # --------------------------------------------
 # Production Stage
 # --------------------------------------------
-FROM node:18-alpine
+FROM node:18-bookworm-slim
 
 WORKDIR /app
 
@@ -47,7 +48,7 @@ COPY --from=builder /app/frontend ./frontend/
 COPY .env.example .env
 
 # Install production dependencies only
-RUN npm ci --production --ignore-scripts
+RUN npm ci --omit=dev --ignore-scripts
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
