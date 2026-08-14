@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
 
 jobs:
   # ============================================
@@ -34,8 +34,6 @@ jobs:
         run: |
           echo "📦 Installing dependencies..."
           rm -rf node_modules
-          # npm ci fails with cross-platform optional deps (npm/cli#4828)
-          # npm install respects the lockfile AND resolves current platform's optional deps
           npm install --include=optional
           echo "✅ Dependencies installed"
 
@@ -258,7 +256,7 @@ jobs:
           # --------------------------------------------
           # Build Stage
           # --------------------------------------------
-          FROM node:18-bookworm-slim AS builder
+          FROM node:20-bookworm-slim AS builder
 
           WORKDIR /app
 
@@ -287,7 +285,7 @@ jobs:
           # --------------------------------------------
           # Production Stage
           # --------------------------------------------
-          FROM node:18-bookworm-slim
+          FROM node:20-bookworm-slim
 
           WORKDIR /app
 
