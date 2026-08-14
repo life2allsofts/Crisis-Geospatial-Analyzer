@@ -34,15 +34,18 @@ jobs:
         run: |
           echo "📦 Installing dependencies..."
           rm -rf node_modules
-          # Use lockfile for deterministic installs; fallback to npm install if missing
-          if [ -f package-lock.json ]; then
-            npm ci --include=optional
-          else
-            npm install --include=optional
+          # npm ci fails with cross-platform optional deps (npm/cli#4828)
+          # npm install respects the lockfile AND resolves current platform's optional deps
+          npm install --include=optional
+          echo "✅ Dependencies installed"
+
+      - name: 🔧 Ensure Tailwind CSS Oxide native binding
+        run: |
+          if ! node -e "require('@tailwindcss/oxide')" 2>/dev/null; then
+            echo "⚠️ Optional dep resolution missed the Linux binding, forcing install..."
+            npm install --no-save --force @tailwindcss/oxide-linux-x64-gnu
           fi
-          # Explicitly ensure Linux x64 GNU native binding for Tailwind CSS v4 (Oxide)
-          npm install --no-save @tailwindcss/oxide-linux-x64-gnu
-          echo "✅ Dependencies and native bindings installed"
+          node -e "require('@tailwindcss/oxide')" && echo "✅ Oxide binding verified" || (echo "❌ Oxide binding missing"; exit 1)
 
       - name: 🔍 TypeScript Lint & Type Check
         run: |
@@ -108,16 +111,15 @@ jobs:
         run: |
           echo "📦 Installing dependencies..."
           rm -rf node_modules
-          if [ -f package-lock.json ]; then
-            npm ci --include=optional
-          else
-            npm install --include=optional
-          fi
-          npm install --no-save @tailwindcss/oxide-linux-x64-gnu
-          echo "✅ Dependencies ready for build"
+          npm install --include=optional
+          echo "✅ Dependencies installed"
 
-      - name: 🔍 Verify Tailwind CSS Oxide binding
+      - name: 🔧 Ensure Tailwind CSS Oxide native binding
         run: |
+          if ! node -e "require('@tailwindcss/oxide')" 2>/dev/null; then
+            echo "⚠️ Optional dep resolution missed the Linux binding, forcing install..."
+            npm install --no-save --force @tailwindcss/oxide-linux-x64-gnu
+          fi
           node -e "require('@tailwindcss/oxide')" && echo "✅ Oxide binding verified" || (echo "❌ Oxide binding missing"; exit 1)
 
       - name: 📦 Build application
@@ -173,16 +175,15 @@ jobs:
         run: |
           echo "📦 Installing dependencies..."
           rm -rf node_modules
-          if [ -f package-lock.json ]; then
-            npm ci --include=optional
-          else
-            npm install --include=optional
-          fi
-          npm install --no-save @tailwindcss/oxide-linux-x64-gnu
-          echo "✅ Dependencies ready for build"
+          npm install --include=optional
+          echo "✅ Dependencies installed"
 
-      - name: 🔍 Verify Tailwind CSS Oxide binding
+      - name: 🔧 Ensure Tailwind CSS Oxide native binding
         run: |
+          if ! node -e "require('@tailwindcss/oxide')" 2>/dev/null; then
+            echo "⚠️ Optional dep resolution missed the Linux binding, forcing install..."
+            npm install --no-save --force @tailwindcss/oxide-linux-x64-gnu
+          fi
           node -e "require('@tailwindcss/oxide')" && echo "✅ Oxide binding verified" || (echo "❌ Oxide binding missing"; exit 1)
 
       - name: 📦 Build application
@@ -266,9 +267,13 @@ jobs:
           COPY tsconfig.json ./
           COPY vite.config.ts ./
 
-          # Use npm ci for deterministic installs; explicitly pull the Oxide Linux binding
-          RUN npm ci --include=optional && \
-              npm install --no-save @tailwindcss/oxide-linux-x64-gnu
+          # npm ci fails with cross-platform optional deps (npm/cli#4828)
+          # npm install respects the lockfile AND resolves current platform's optional deps
+          RUN npm install --include=optional && \
+              npm install --no-save --force @tailwindcss/oxide-linux-x64-gnu
+
+          # Verify binding before build
+          RUN node -e "require('@tailwindcss/oxide')" && echo "✅ Oxide binding verified"
 
           # Copy source code
           COPY backend/ ./backend/
@@ -293,11 +298,11 @@ jobs:
           COPY --from=builder /app/backend ./backend/
           COPY --from=builder /app/frontend ./frontend/
 
-          # Copy .env.example as .env (will be overridden by HF secrets)
+          # Copy .env.example as .env (will be overridden by runtime secrets)
           COPY .env.example .env
 
-          # Install production dependencies only using the lockfile
-          RUN npm ci --production --ignore-scripts
+          # Install production dependencies only
+          RUN npm install --production --ignore-scripts
 
           # Create non-root user
           RUN useradd -m -u 1001 nodejs

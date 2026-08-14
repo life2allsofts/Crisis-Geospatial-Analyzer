@@ -16,9 +16,13 @@ COPY package*.json ./
 COPY tsconfig.json ./
 COPY vite.config.ts ./
 
-# Use npm ci for deterministic installs; explicitly pull the Oxide Linux binding
-RUN npm ci --include=optional && \
-    npm install --no-save @tailwindcss/oxide-linux-x64-gnu
+# npm ci fails with cross-platform optional deps (npm/cli#4828)
+# npm install respects the lockfile AND resolves current platform's optional deps
+RUN npm install --include=optional && \
+    npm install --no-save --force @tailwindcss/oxide-linux-x64-gnu
+
+# Verify binding before build
+RUN node -e "require('@tailwindcss/oxide')" && echo "✅ Oxide binding verified"
 
 # Copy source code
 COPY backend/ ./backend/
@@ -46,8 +50,8 @@ COPY --from=builder /app/frontend ./frontend/
 # Copy .env.example as .env (will be overridden by runtime secrets)
 COPY .env.example .env
 
-# Install production dependencies only using the lockfile
-RUN npm ci --production --ignore-scripts
+# Install production dependencies only
+RUN npm install --production --ignore-scripts
 
 # Create non-root user
 RUN useradd -m -u 1001 nodejs
