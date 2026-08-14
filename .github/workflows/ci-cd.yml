@@ -17,59 +17,54 @@ jobs:
   test:
     name: 🧪 Test & Validate
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v3
         with:
           lfs: true
-      
+
       - name: 🔧 Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      
+
       - name: 📦 Install dependencies
         run: |
           echo "📦 Installing dependencies..."
-          rm -rf node_modules
+          rm -rf node_modules package-lock.json
           npm install --include=optional
-          npm rebuild @tailwindcss/oxide
-          # Verify installation
-          if [ -f "node_modules/@tailwindcss/oxide/index.js" ]; then
-            echo "✅ @tailwindcss/oxide installed successfully"
-          else
-            echo "⚠️ @tailwindcss/oxide not found, continuing..."
-          fi
-      
+          npm install --no-save @tailwindcss/oxide-linux-x64-gnu || true
+          echo "✅ Dependencies and native bindings installed"
+
       - name: 🔍 TypeScript Lint & Type Check
         run: |
           echo "🔍 Running TypeScript type check..."
           npx tsc --noEmit --skipLibCheck
           echo "✅ TypeScript compilation successful"
-      
+
       - name: 🧪 Run Geospatial Tests
         run: |
           echo "════════════════════════════════════════════════════"
           echo "TESTING: Geospatial Engine"
           echo "════════════════════════════════════════════════════"
           npx tsx tests/geospatial.test.ts || echo "⚠️ Geospatial tests skipped (file may not exist)"
-      
+
       - name: 🧪 Test LLM Service
         run: |
           echo "════════════════════════════════════════════════════"
           echo "TESTING: LLM Service"
           echo "════════════════════════════════════════════════════"
           npx tsx tests/llm.test.ts || echo "⚠️ LLM tests skipped (file may not exist)"
-      
+
       - name: 🧪 Test API Routes
         run: |
           echo "════════════════════════════════════════════════════"
           echo "TESTING: API Routes"
           echo "════════════════════════════════════════════════════"
           npx tsx tests/api.test.ts || echo "⚠️ API tests skipped (file may not exist)"
-      
+
       - name: 🎯 Test Summary
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -90,50 +85,33 @@ jobs:
     name: 📦 Build Application
     needs: test
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v3
         with:
           lfs: true
-      
+
       - name: 🔧 Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      
+
       - name: 📦 Install dependencies
         run: |
           echo "📦 Installing dependencies..."
-          rm -rf node_modules
+          rm -rf node_modules package-lock.json
           npm install --include=optional
-          npm rebuild @tailwindcss/oxide
-          # Verify installation
-          if [ -f "node_modules/@tailwindcss/oxide/index.js" ]; then
-            echo "✅ @tailwindcss/oxide installed successfully"
-          else
-            echo "⚠️ @tailwindcss/oxide not found, continuing..."
-          fi
-      
-      - name: 🔧 Create PostCSS config if missing
-        run: |
-          if [ ! -f postcss.config.cjs ] && [ ! -f postcss.config.js ]; then
-            echo "⚠️ PostCSS config not found, creating default..."
-            echo 'module.exports = { plugins: { "@tailwindcss/postcss": {}, "autoprefixer": {} } };' > postcss.config.cjs
-          fi
-          # Ensure we use .cjs extension
-          if [ -f postcss.config.js ] && [ ! -f postcss.config.cjs ]; then
-            echo "Converting postcss.config.js to postcss.config.cjs..."
-            cp postcss.config.js postcss.config.cjs
-          fi
-      
+          npm install --no-save @tailwindcss/oxide-linux-x64-gnu || true
+          echo "✅ Dependencies ready for build"
+
       - name: 📦 Build application
         run: |
           echo "🏗️ Building application..."
           npm run build
           echo "✅ Build complete"
-      
+
       - name: 📊 Verify build artifacts
         run: |
           echo "📊 Build artifacts:"
@@ -144,7 +122,7 @@ jobs:
           echo ""
           echo "📁 Client assets:"
           ls -la dist/assets/ || echo "⚠️ assets not found"
-      
+
       - name: 💾 Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -163,74 +141,57 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           lfs: true
-      
+
       - name: 🔧 Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      
+
       - name: 📦 Install dependencies
         run: |
           echo "📦 Installing dependencies..."
-          rm -rf node_modules
+          rm -rf node_modules package-lock.json
           npm install --include=optional
-          npm rebuild @tailwindcss/oxide
-          # Verify installation
-          if [ -f "node_modules/@tailwindcss/oxide/index.js" ]; then
-            echo "✅ @tailwindcss/oxide installed successfully"
-          else
-            echo "⚠️ @tailwindcss/oxide not found, continuing..."
-          fi
-      
-      - name: 🔧 Ensure PostCSS config exists
-        run: |
-          if [ ! -f postcss.config.cjs ] && [ ! -f postcss.config.js ]; then
-            echo "Creating postcss.config.cjs..."
-            echo 'module.exports = { plugins: { "@tailwindcss/postcss": {}, "autoprefixer": {} } };' > postcss.config.cjs
-          fi
-          if [ -f postcss.config.js ] && [ ! -f postcss.config.cjs ]; then
-            echo "Converting postcss.config.js to postcss.config.cjs..."
-            cp postcss.config.js postcss.config.cjs
-          fi
-      
+          npm install --no-save @tailwindcss/oxide-linux-x64-gnu || true
+
       - name: 📦 Build application
         run: |
           echo "🏗️ Building for deployment..."
           npm run build
           echo "✅ Build complete"
-      
+
       - name: 🚀 Deploy to Hugging Face Space using Git
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           echo "🚀 Deploying to Hugging Face Spaces..."
           echo "📦 Target Space: Tetteh-Apotey/Crisis-Geospatial-Analyzer"
-          
+
           # Configure git
           git config --global user.email "ci-cd@github.com"
           git config --global user.name "CI/CD Bot"
-          
+
           # Clone the space with token authentication
           echo "📥 Cloning Hugging Face Space..."
           git clone https://Tetteh-Apotey:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Tetteh-Apotey/Crisis-Geospatial-Analyzer space_repo || {
             echo "❌ Failed to clone space. Creating new space..."
             git clone https://Tetteh-Apotey:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Tetteh-Apotey/Crisis-Geospatial-Analyzer space_repo
           }
-          
+
           # Clear the space repository but preserve .git and .gitattributes
           cd space_repo
           echo "🗑️ Clearing old files from Space repository..."
           find . -maxdepth 1 -not -name '.git' -not -name '.' -not -name '..' -not -name '.gitattributes' -exec rm -rf {} +
           cd ..
-          
+
           # Copy all new files from current repository
           echo "📋 Copying new files to Space repository..."
           rsync -av \
@@ -251,14 +212,9 @@ jobs:
             --exclude='space_repo' \
             --exclude='dist' \
             ./ space_repo/
-          
-          # Ensure PostCSS config exists in space repo
+
           cd space_repo
-          if [ ! -f postcss.config.cjs ]; then
-            echo "Creating postcss.config.cjs in space repo..."
-            echo 'module.exports = { plugins: { "@tailwindcss/postcss": {}, "autoprefixer": {} } };' > postcss.config.cjs
-          fi
-          
+
           # Create .env file with secrets
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
           echo "NODE_ENV=production" >> .env
@@ -266,7 +222,7 @@ jobs:
           echo "LOG_LEVEL=info" >> .env
           echo "CORS_ORIGINS=https://tetteh-apotey-crisis-geospatial-analyzer.hf.space" >> .env
           echo "DATA_PATH=./backend/data" >> .env
-          
+
           # Create or update Dockerfile for Hugging Face Spaces
           cat > Dockerfile << 'EOF'
           # ============================================
@@ -286,11 +242,10 @@ jobs:
           COPY package*.json ./
           COPY tsconfig.json ./
           COPY vite.config.ts ./
-          COPY postcss.config.cjs ./
-          COPY tailwind.config.js ./
 
-          RUN npm install --include=optional
-          RUN npm rebuild @tailwindcss/oxide || true
+          RUN rm -f package-lock.json && \
+              npm install --include=optional && \
+              npm install --no-save @tailwindcss/oxide-linux-x64-gnu || true
 
           # Copy source code
           COPY backend/ ./backend/
@@ -319,11 +274,10 @@ jobs:
           COPY .env.example .env
 
           # Install production dependencies only
-          RUN npm install --production --ignore-scripts
+          RUN rm -f package-lock.json && npm install --production --ignore-scripts
 
           # Create non-root user
-          RUN addgroup -g 1001 -S nodejs && \
-              adduser -S nodejs -u 1001
+          RUN useradd -m -u 1001 nodejs
 
           USER nodejs
 
@@ -349,7 +303,7 @@ jobs:
           # --------------------------------------------
           CMD ["node", "dist/server.cjs"]
           EOF
-          
+
           # Create .gitattributes for HF Spaces
           cat > .gitattributes << 'EOF'
           * text=auto
@@ -361,11 +315,11 @@ jobs:
           *.json linguist-language=JSON
           *.md linguist-language=Markdown
           EOF
-          
+
           # Commit and push changes
           echo ""
           echo "📝 Committing changes..."
-          
+
           git add .
           if git diff --staged --quiet; then
             echo "ℹ️ No changes detected - skipping commit"
@@ -378,11 +332,11 @@ jobs:
               git push origin main --force
             }
           fi
-          
+
           echo ""
           echo "✅ Deployment completed successfully!"
           cd ..
-      
+
       - name: 🎉 Deployment Summary
         run: |
           echo ""

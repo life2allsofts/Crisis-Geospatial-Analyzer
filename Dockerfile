@@ -15,17 +15,16 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY vite.config.ts ./
-COPY postcss.config.cjs ./
-COPY tailwind.config.js ./
 
-RUN npm ci --include=optional
-RUN npm rebuild @tailwindcss/oxide --foreground-scripts
+RUN rm -f package-lock.json && \
+    npm install --include=optional && \
+    npm install --no-save @tailwindcss/oxide-linux-x64-gnu || true
 
 # Copy source code
+COPY server.ts ./
+COPY index.html ./
 COPY backend/ ./backend/
 COPY frontend/ ./frontend/
-COPY index.html ./
-COPY server.ts ./
 
 # Build the application
 RUN npm run build
@@ -44,15 +43,14 @@ COPY --from=builder /app/server.ts ./
 COPY --from=builder /app/backend ./backend/
 COPY --from=builder /app/frontend ./frontend/
 
-# Copy .env.example as .env (will be overridden by HF secrets)
+# Copy .env.example as .env (will be overridden by runtime secrets)
 COPY .env.example .env
 
 # Install production dependencies only
-RUN npm ci --omit=dev --ignore-scripts
+RUN rm -f package-lock.json && npm install --production --ignore-scripts
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+RUN useradd -m -u 1001 nodejs
 
 USER nodejs
 
